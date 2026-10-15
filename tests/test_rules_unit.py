@@ -1,5 +1,6 @@
 from fakes import FW, FakeLexicon, sent
 
+from cadmus.data import filter_violations
 from cadmus.lexicon import PropnLexicon
 from cadmus.rules.agreement import adj_noun, det_noun, subj_verb
 from cadmus.rules.government import prep_case
@@ -146,3 +147,25 @@ def test_propn_accent_clean_and_ambiguous():
     amb = PropnLexicon(["Αθηνα", "Αθήνα"])
     assert propn_accent(*sent([FW(1, "Αθηνα", "PROPN", head=0, deprel="root")]),
                         {"propn": amb}) == []
+
+
+def _v(rule, severity):
+    from types import SimpleNamespace
+    return SimpleNamespace(rule=rule, severity=severity)
+
+
+def test_filter_by_rules():
+    vs = [_v("det_noun", "medium"), _v("typography", "low")]
+    assert [v.rule for v in filter_violations(vs, rules=["typography"])] == ["typography"]
+
+
+def test_filter_by_min_severity():
+    vs = [_v("typography", "low"), _v("det_noun", "medium"), _v("negation", "high")]
+    assert [v.rule for v in filter_violations(vs, min_severity="medium")] == ["det_noun", "negation"]
+    assert [v.rule for v in filter_violations(vs, min_severity="high")] == ["negation"]
+    assert len(filter_violations(vs, min_severity="low")) == 3
+
+
+def test_filter_combined():
+    vs = [_v("typography", "low"), _v("det_noun", "medium")]
+    assert filter_violations(vs, min_severity="medium", rules=["typography"]) == []

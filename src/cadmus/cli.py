@@ -5,6 +5,7 @@ import sys
 from . import __version__
 from .checker import CadmusChecker
 from .corpora import BROKEN_SENTENCES, DEMO_SENTENCES
+from .data import filter_violations
 
 
 def _render(violations):
@@ -27,6 +28,12 @@ def main(argv=None):
     p_check = sub.add_parser("check", help="check text from a file or stdin")
     p_check.add_argument("path", nargs="?", help="text file (UTF-8); omit to read stdin")
     p_check.add_argument("--json", action="store_true", dest="as_json")
+    p_check.add_argument("--severity", choices=["low", "medium", "high"],
+                         help="only report violations at or above this severity")
+    p_check.add_argument("--rules", metavar="R1,R2",
+                         help="comma-separated rule ids to report")
+    p_check.add_argument("--quiet", action="store_true",
+                         help="print nothing; exit code 1 if any (filtered) violation remains")
 
     sub.add_parser("demo", help="run on the built-in demo corpus")
 
@@ -58,6 +65,10 @@ def main(argv=None):
 
     text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
     violations = checker.check(text)
+    rules = args.rules.split(",") if args.rules else None
+    violations = filter_violations(violations, min_severity=args.severity, rules=rules)
+    if args.quiet:
+        return 1 if violations else 0
     if args.as_json:
         print(json.dumps([v.as_dict() for v in violations], ensure_ascii=False, indent=2))
     else:

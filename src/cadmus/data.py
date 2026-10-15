@@ -35,6 +35,20 @@ RULE_SEVERITY = {
     "na_form": "medium",
 }
 
+SEVERITY_RANK = {"low": 0, "medium": 1, "high": 2}
+
+
+def filter_violations(violations, min_severity=None, rules=None):
+    """Pure filter over objects exposing .rule and .severity (model-free)."""
+    out = list(violations)
+    if rules:
+        wanted = set(rules)
+        out = [v for v in out if v.rule in wanted]
+    if min_severity is not None:
+        rank = SEVERITY_RANK[min_severity]
+        out = [v for v in out if SEVERITY_RANK.get(v.severity, 0) >= rank]
+    return out
+
 
 def feats(word):
     f = word.feats or ""

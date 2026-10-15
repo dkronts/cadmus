@@ -89,14 +89,18 @@ Newly surfaced gaps:
 - [~] Suggestion generation (not just flags): `det_noun` now emits the
       corrected article from the paradigm table; broader per-rule suggestions
       (suffix/declension tables) still pending
-- [ ] `--rules` filter, `--severity`, `--quiet` CLI options
+- [x] `--rules` filter, `--severity`, `--quiet` CLI options (pure
+      `data.filter_violations`; `--quiet` = no output, exit code drives gating)
 - [x] Rule severity + category taxonomy in JSON output (`Violation.severity`,
       `RULE_SEVERITY`; surfaced in CLI and `--json`)
+- [x] GitHub Actions CI: model-free rule unit tests (fake stanza objects),
+      integration job gated behind `workflow_dispatch`
+
+## v0.0.7 — Streaming & batch
+
 - [ ] Batch mode (stanza batch processing) for whole documents
 - [ ] `watch` mode: read a growing file / named pipe — for live-gating
       local LLM output (ollama / llama.cpp server logs)
-- [x] GitHub Actions CI: model-free rule unit tests (fake stanza objects),
-      integration job gated behind `workflow_dispatch`
 
 ## Later / research
 
@@ -125,3 +129,6 @@ Newly surfaced gaps:
       Measured (200 UD-GDT test sentences): recall — accents 95%, script-mix 96%,
       non-words 88%, proper-noun accent 62%, wrong article 68%, δεν/μην 100%,
       typography 100%; ~7 FPs/100 clean (typography and propn_accent 0 FP).
+- [x] v0.0.6 — CLI gating for middleware use: `--severity` (min level),
+      `--rules` (id allow-list), `--quiet` (silent, exit code 1 if any filtered
+      violation remains); pure `filter_violations` helper with model-free tests.

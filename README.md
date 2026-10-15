@@ -106,6 +106,15 @@ cadmus demo
 cadmus eval --n 100
 ```
 
+As a gate in front of a model, filter to what matters and let the exit code
+drive the pipeline (0 = clean, 1 = violations remain):
+
+```bash
+cadmus check draft.txt --severity medium   # ignore low-severity style nits
+cadmus check draft.txt --rules negation,prep_case   # only these checks
+cadmus check draft.txt --quiet || echo "needs review"
+```
+
 Library:
 
 ```python
