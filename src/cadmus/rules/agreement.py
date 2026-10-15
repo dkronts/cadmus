@@ -1,0 +1,92 @@
+"""Agreement rules: determiner-noun, adjective-noun, subject-verb, copula predicate."""
+
+from ..data import HETEREOCLITE_PLURALS, conj_closure, feats, has_own_determiner
+
+AGREEMENT_FEATURES = ("Gender", "Case", "Number")
+
+
+def _effective_gender(word, feats, env):
+    lex = env.get("lexicon")
+    if lex is not None and word.upos == "NOUN":
+        return lex.resolve_gender(word)
+    return feats.get("Gender")
+
+
+def _det_gender(w, f, env):
+    lex = env.get("lexicon")
+    if lex is not None:
+        paradigm = lex.resolve_det_gender(w)
+        if paradigm is not None:
+            return paradigm
+    return f.get("Gender")
+
+
+def det_noun(sent, by_id, env):
+    out = []
+    for w in sent.words:
+        if w.deprel != "det":
+            continue
+        h = by_id.get(w.head)
+        if not h or h.upos not in ("NOUN", "PROPN"):
+            continue
+        f, hf = feats(w), feats(h)
+        if _heteroclite_escape(w, h, f, hf):
+            continue
+        noun_gender = _effective_gender(h, hf, env)
+        det_gender = _det_gender(w, f, env)
+        for k in AGREEMENT_FEATURES:
+            noun_val = noun_gender if k == "Gender" else hf.get(k)
+            det_val = det_gender if k == "Gender" else f.get(k)
+            if det_val is not None and noun_val is not None and det_val != noun_val:
+                out.append((w, h, f"DET-NOUN {k}: '{w.text}'[{det_val}] vs '{h.text}'[{noun_val}]"))
+    return out
+
+
+def _heteroclite_escape(det, noun, det_f, noun_f):
+    if det_f.get("Number") != "Plur" or "Gender" not in det_f:
+        return False
+    article_gender = HETEREOCLITE_PLURALS.get(noun.lemma or "")
+    return (
+        bool(article_gender)
+        and det_f["Gender"] == article_gender
+        and noun_f.get("Number") == "Plur"
+    )
+
+
+def adj_noun(sent, by_id, env):
+    out = []
+    for w in sent.words:
+        if w.deprel != "amod":
+            continue
+        h = by_id.get(w.head)
+        if not h or h.upos not in ("NOUN", "PROPN"):
+            continue
+        f, hf = feats(w), feats(h)
+        if f.get("Case") and hf.get("Case") and f["Case"] != hf["Case"]:
+            continue
+        noun_gender = _effective_gender(h, hf, env)
+        for k in AGREEMENT_FEATURES:
+            noun_val = noun_gender if k == "Gender" else hf.get(k)
+            if k in f and noun_val is not None and f[k] != noun_val:
+                out.append((w, h, f"ADJ-NOUN {k}: '{w.text}'[{f[k]}] vs '{h.text}'[{noun_val}]"))
+    return out
+
+
+def subj_verb(sent, by_id, env):
+    out = []
+    for w in sent.words:
+        if w.deprel != "nsubj":
+            continue
+        h = by_id.get(w.head)
+        if not h or h.deprel != "root" or h.upos not in ("VERB", "AUX", "ADJ"):
+            continue
+        f, hf = feats(w), feats(h)
+        members = conj_closure(w, by_id)
+        coordinated = len(members) > 1 and all(has_own_determiner(m, by_id) for m in members)
+        if "Number" in f and "Number" in hf and f["Number"] != hf["Number"]:
+            plural_licensed = hf["Number"] == "Plur" and coordinated
+            if not plural_licensed:
+                out.append((w, h, f"SUBJ-VERB Number: '{w.text}'[{f['Number']}] vs '{h.text}'[{hf['Number']}]"))
+        if hf.get("Person") in ("1", "2") and w.upos != "PRON":
+            out.append((w, h, f"SUBJ-VERB Person: verb '{h.text}' is {hf['Person']}p but subject '{w.text}' is not a pronoun"))
+    return out

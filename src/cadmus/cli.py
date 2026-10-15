@@ -1,0 +1,65 @@
+import argparse
+import json
+import sys
+
+from .checker import CadmusChecker
+from .corpora import BROKEN_SENTENCES, DEMO_SENTENCES
+
+
+def _render(violations):
+    if not violations:
+        print("OK: no violations found.")
+        return
+    for v in violations:
+        print(f"[{v.rule}] {v.message}  (offset {v.start_char}-{v.end_char}) in: {v.sentence}")
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(
+        prog="cadmus",
+        description="Greek grammar/syntax checker (Cadmus v0.0.1)",
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    p_check = sub.add_parser("check", help="check text from a file or stdin")
+    p_check.add_argument("path", nargs="?", help="text file (UTF-8); omit to read stdin")
+    p_check.add_argument("--json", action="store_true", dest="as_json")
+
+    sub.add_parser("demo", help="run on the built-in demo corpus")
+
+    p_eval = sub.add_parser("eval", help="measure FP on clean UD text and recall on injected errors")
+    p_eval.add_argument("--n", type=int, default=100)
+    p_eval.add_argument("--seed", type=int, default=42)
+    p_eval.add_argument("-v", "--verbose", action="store_true")
+
+    args = p.parse_args(argv)
+    checker = CadmusChecker()
+
+    if args.cmd == "demo":
+        for corpus, label in ((DEMO_SENTENCES, "demo corpus (expect clean)"), (BROKEN_SENTENCES, "LLM-style errors (expect flags)")):
+            print(f"--- {label} ---")
+            for s in corpus:
+                vs = checker.check(s)
+                mark = "FLAG" if vs else "ok"
+                print(f"[{mark:4}] {s}")
+                for v in vs:
+                    print(f"        {v.message}")
+        return 0
+
+    if args.cmd == "eval":
+        from .eval.harness import run_eval
+
+        print(run_eval(n=args.n, seed=args.seed, verbose=args.verbose))
+        return 0
+
+    text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
+    violations = checker.check(text)
+    if args.as_json:
+        print(json.dumps([v.as_dict() for v in violations], ensure_ascii=False, indent=2))
+    else:
+        _render(violations)
+    return 1 if violations else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

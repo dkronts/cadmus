@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cadmus"
+version = "0.0.3"
+description = "Greek grammar and syntax intelligence layer — for LLM and speech-to-text output; detection today, correction layers and fine-tuning signals tomorrow"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = ["stanza>=1.15", "spylls>=0.1"]
+keywords = ["greek", "grammar", "syntax", "nlp", "llm", "checker"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+cadmus = "cadmus.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
