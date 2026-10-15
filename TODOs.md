@@ -57,22 +57,29 @@ Newly surfaced gaps:
 
 ## v0.0.4 — Orthography & typography layer (no ML needed)
 
-- [ ] Greek question mark `;` vs `?`
-- [ ] Quote style `«»`, spacing rules, space before/after punctuation
-- [ ] Capitalization after sentence end; proper-noun casing
+- [x] Greek question mark `;` vs `?`
+- [x] Spacing rules: space before punctuation, missing space after, double
+      spaces (decimals `3,14` / times `10:30` exempted)
+- [x] Capitalization after a sentence terminator (`. ! ?`) — text-level, only
+      fires mid-text so bare lowercase sentence starts are not penalized
+- [ ] Quote style `«»` — deferred to an optional **style tier** (straight
+      quotes are common and not an error; flagging them cost precision)
+- [ ] Proper-noun casing
 - [ ] Final -ν correctness (τον/το, στην/στη) where lexicon supports it
 
 ## v0.0.5 — Usability & integration
 
-- [ ] Suggestion generation (not just flags): paradigm tables per
-      declension classes (suffix tables)
+- [~] Suggestion generation (not just flags): `det_noun` now emits the
+      corrected article from the paradigm table; broader per-rule suggestions
+      (suffix/declension tables) still pending
 - [ ] `--rules` filter, `--severity`, `--quiet` CLI options
-- [ ] Rule severity + category taxonomy in JSON output
+- [x] Rule severity + category taxonomy in JSON output (`Violation.severity`,
+      `RULE_SEVERITY`; surfaced in CLI and `--json`)
 - [ ] Batch mode (stanza batch processing) for whole documents
 - [ ] `watch` mode: read a growing file / named pipe — for live-gating
       local LLM output (ollama / llama.cpp server logs)
-- [ ] GitHub Actions CI: model-free rule unit tests (fake stanza objects),
-      integration job optional/nightly
+- [x] GitHub Actions CI: model-free rule unit tests (fake stanza objects),
+      integration job gated behind `workflow_dispatch`
 
 ## Later / research
 
@@ -90,3 +97,8 @@ Newly surfaced gaps:
 
 - [x] v0.0.1 — det-noun / adj-noun / subj-verb (coordination-aware) /
       prep-case rules; demo corpus as regression set; CLI
+- [x] v0.0.4 — typography rule (`?`→`;`, spacing, capitalization), severity
+      taxonomy on every violation, `det_noun` article suggestions, model-free
+      rule unit tests + GitHub Actions CI. Measured (150 UD-GDT test sentences):
+      recall — non-words 92%, script-mix 95%, accents 95%, wrong article 62%,
+      δεν/μην 100%, typography 100%; ~7 FPs/100 clean (typography 0 FP).

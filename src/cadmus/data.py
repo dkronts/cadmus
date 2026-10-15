@@ -11,6 +11,29 @@ HETEREOCLITE_PLURALS = {
     "πλευρά": "Neut",
 }
 
+DEFINITE_ARTICLES = {
+    ("Fem", "Sing", "Nom"): "η", ("Fem", "Sing", "Gen"): "της", ("Fem", "Sing", "Acc"): "την",
+    ("Fem", "Plur", "Nom"): "οι", ("Fem", "Plur", "Gen"): "των", ("Fem", "Plur", "Acc"): "τις",
+    ("Masc", "Sing", "Nom"): "ο", ("Masc", "Sing", "Gen"): "του", ("Masc", "Sing", "Acc"): "τον",
+    ("Masc", "Plur", "Nom"): "οι", ("Masc", "Plur", "Gen"): "των", ("Masc", "Plur", "Acc"): "τους",
+    ("Neut", "Sing", "Nom"): "το", ("Neut", "Sing", "Gen"): "του", ("Neut", "Sing", "Acc"): "το",
+    ("Neut", "Plur", "Nom"): "τα", ("Neut", "Plur", "Gen"): "των", ("Neut", "Plur", "Acc"): "τα",
+}
+
+RULE_SEVERITY = {
+    "spelling": "medium",
+    "typography": "low",
+    "det_noun": "medium",
+    "adj_noun": "medium",
+    "subj_verb": "high",
+    "prep_case": "high",
+    "verb_valence": "medium",
+    "negation": "high",
+    "copula_pred": "medium",
+    "rel_agreement": "medium",
+    "na_form": "medium",
+}
+
 
 def feats(word):
     f = word.feats or ""

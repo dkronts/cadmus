@@ -4,14 +4,9 @@ import random
 import re
 import unicodedata
 
-ARTICLES = {
-    ("Fem", "Sing", "Nom"): "η", ("Fem", "Sing", "Gen"): "της", ("Fem", "Sing", "Acc"): "την",
-    ("Fem", "Plur", "Nom"): "οι", ("Fem", "Plur", "Gen"): "των", ("Fem", "Plur", "Acc"): "τις",
-    ("Masc", "Sing", "Nom"): "ο", ("Masc", "Sing", "Gen"): "του", ("Masc", "Sing", "Acc"): "τον",
-    ("Masc", "Plur", "Nom"): "οι", ("Masc", "Plur", "Gen"): "των", ("Masc", "Plur", "Acc"): "τους",
-    ("Neut", "Sing", "Nom"): "το", ("Neut", "Sing", "Gen"): "του", ("Neut", "Sing", "Acc"): "το",
-    ("Neut", "Plur", "Nom"): "τα", ("Neut", "Plur", "Gen"): "των", ("Neut", "Plur", "Acc"): "τα",
-}
+from ..data import DEFINITE_ARTICLES
+
+ARTICLES = DEFINITE_ARTICLES
 FORM_TO_KEY = {v: k for k, v in ARTICLES.items()}
 
 GREEK_WORD = re.compile(r"[\u0370-\u03ff\u1f00-\u1fff]+")
@@ -79,7 +74,24 @@ def corrupt_negation(text, rng):
     return text[:start] + swap + text[start + len(w):], "negation"
 
 
-ALL = [corrupt_det, corrupt_typo, corrupt_accent, corrupt_homoglyph, corrupt_negation]
+def corrupt_question_mark(text, rng):
+    positions = [i for i, ch in enumerate(text) if ch == ";"]
+    if not positions:
+        return None
+    i = rng.choice(positions)
+    return text[:i] + "?" + text[i + 1:], "typography"
+
+
+def corrupt_spacing(text, rng):
+    positions = [i for i, ch in enumerate(text) if ch == "," and i + 1 < len(text) and text[i + 1] == " "]
+    if not positions:
+        return None
+    i = rng.choice(positions)
+    return text[:i] + " ," + text[i + 1:], "typography"
+
+
+ALL = [corrupt_det, corrupt_typo, corrupt_accent, corrupt_homoglyph,
+       corrupt_negation, corrupt_question_mark, corrupt_spacing]
 
 
 def corrupt(text, rng):

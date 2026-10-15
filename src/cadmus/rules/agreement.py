@@ -1,6 +1,9 @@
 """Agreement rules: determiner-noun, adjective-noun, subject-verb, copula predicate."""
 
-from ..data import HETEREOCLITE_PLURALS, conj_closure, feats, has_own_determiner
+from ..data import (
+    DEFINITE_ARTICLES, HETEREOCLITE_PLURALS, conj_closure, feats,
+    has_own_determiner,
+)
 
 AGREEMENT_FEATURES = ("Gender", "Case", "Number")
 
@@ -34,11 +37,15 @@ def det_noun(sent, by_id, env):
             continue
         noun_gender = _effective_gender(h, hf, env)
         det_gender = _det_gender(w, f, env)
+        target = DEFINITE_ARTICLES.get(
+            (noun_gender or hf.get("Gender"), hf.get("Number"), hf.get("Case"))
+        )
         for k in AGREEMENT_FEATURES:
             noun_val = noun_gender if k == "Gender" else hf.get(k)
             det_val = det_gender if k == "Gender" else f.get(k)
             if det_val is not None and noun_val is not None and det_val != noun_val:
-                out.append((w, h, f"DET-NOUN {k}: '{w.text}'[{det_val}] vs '{h.text}'[{noun_val}]"))
+                msg = f"DET-NOUN {k}: '{w.text}'[{det_val}] vs '{h.text}'[{noun_val}]"
+                out.append((w, h, msg, f"«{target}»") if target else (w, h, msg))
     return out
 
 

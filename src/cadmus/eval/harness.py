@@ -16,6 +16,7 @@ TARGET_RULES = {
     "accent": {"spelling"},
     "script_mix": {"spelling"},
     "negation": {"negation"},
+    "typography": {"typography"},
 }
 
 

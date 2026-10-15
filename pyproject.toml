@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cadmus"
-version = "0.0.3"
+version = "0.0.4"
 description = "Greek grammar and syntax intelligence layer — for LLM and speech-to-text output; detection today, correction layers and fine-tuning signals tomorrow"
 readme = "README.md"
 license = { text = "MIT" }

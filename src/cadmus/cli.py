@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 
+from . import __version__
 from .checker import CadmusChecker
 from .corpora import BROKEN_SENTENCES, DEMO_SENTENCES
 
@@ -11,13 +12,15 @@ def _render(violations):
         print("OK: no violations found.")
         return
     for v in violations:
-        print(f"[{v.rule}] {v.message}  (offset {v.start_char}-{v.end_char}) in: {v.sentence}")
+        extra = f"  → {v.suggestion}" if v.suggestion else ""
+        print(f"[{v.rule}/{v.severity}] {v.message}{extra}  "
+              f"(offset {v.start_char}-{v.end_char}) in: {v.sentence}")
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(
         prog="cadmus",
-        description="Greek grammar/syntax checker (Cadmus v0.0.1)",
+        description=f"Greek grammar/syntax checker (Cadmus v{__version__})",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -43,7 +46,8 @@ def main(argv=None):
                 mark = "FLAG" if vs else "ok"
                 print(f"[{mark:4}] {s}")
                 for v in vs:
-                    print(f"        {v.message}")
+                    extra = f"  → {v.suggestion}" if v.suggestion else ""
+                    print(f"        [{v.severity}] {v.message}{extra}")
         return 0
 
     if args.cmd == "eval":

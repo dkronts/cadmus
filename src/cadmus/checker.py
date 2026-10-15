@@ -1,10 +1,12 @@
 """Core checker: text in, violations out."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+from .data import RULE_SEVERITY
 from .lexicon import FormLexicon
 from .pipeline import load_pipeline
 from .rules import DAMPENABLE, RULES
+from .rules.typography import typography
 
 
 @dataclass
@@ -14,6 +16,11 @@ class Violation:
     message: str
     start_char: int
     end_char: int
+    suggestion: str = ""
+    severity: str = field(default="medium", init=False)
+
+    def __post_init__(self):
+        self.severity = RULE_SEVERITY.get(self.rule, "medium")
 
     def as_dict(self):
         return {
@@ -22,6 +29,8 @@ class Violation:
             "message": self.message,
             "start_char": self.start_char,
             "end_char": self.end_char,
+            "suggestion": self.suggestion,
+            "severity": self.severity,
         }
 
 
@@ -43,19 +52,30 @@ class CadmusChecker:
     def check(self, text):
         doc = self.nlp(text)
         violations = []
+        for s, e, msg, sug in typography(text):
+            containing = next(
+                (sent for sent in doc.sentences
+                 if sent.tokens and sent.tokens[0].start_char <= s < sent.tokens[-1].end_char + 1),
+                None,
+            )
+            sent_text = containing.text if containing else text[:80]
+            violations.append(Violation(sent_text, "typography", msg, s, e, suggestion=sug))
         for sent in doc.sentences:
             by_id = {w.id: w for w in sent.words}
             env = {}
             if self.use_lexicon:
                 env["lexicon"] = self.lexicon()
             for name, fn in RULES.items():
-                for w, h, msg in fn(sent, by_id, env):
+                for flag in fn(sent, by_id, env):
+                    w, h, msg = flag[0], flag[1], flag[2]
+                    suggestion = flag[3] if len(flag) > 3 else ""
                     if name in DAMPENABLE and self._dampened(w, h, rule=name):
                         self._damp_stats["suppressed"] += 1
                         continue
                     self._damp_stats["fired"] += 1
                     violations.append(
-                        Violation(sent.text, name, msg, *self._offsets(sent, w))
+                        Violation(sent.text, name, msg, *self._offsets(sent, w),
+                                  suggestion=suggestion)
                     )
         return violations
 
