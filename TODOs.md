@@ -96,7 +96,15 @@ Newly surfaced gaps:
 - [x] GitHub Actions CI: model-free rule unit tests (fake stanza objects),
       integration job gated behind `workflow_dispatch`
 
-## v0.0.7 — Streaming & batch
+## v0.0.7 — Data factory export
+
+- [x] `cadmus export`: aligned (broken -> correct) pairs from the held-out
+      UD-GDT test sentences, labelled by error type with a localized diff span
+      (`--format jsonl|json`); model-free (no stanza), CI-tested
+- [ ] `--with-check` to attach the checker's own detection + suggestion per pair
+- [ ] richer targets: multi-error sentences, sentence-pair (context) examples
+
+## v0.0.8 — Streaming & batch
 
 - [ ] Batch mode (stanza batch processing) for whole documents
 - [ ] `watch` mode: read a growing file / named pipe — for live-gating
@@ -132,3 +140,6 @@ Newly surfaced gaps:
 - [x] v0.0.6 — CLI gating for middleware use: `--severity` (min level),
       `--rules` (id allow-list), `--quiet` (silent, exit code 1 if any filtered
       violation remains); pure `filter_violations` helper with model-free tests.
+- [x] v0.0.7 — data-factory export: `cadmus export` emits aligned
+      (broken → correct) pairs from UD-GDT, labelled by error type with a
+      localized diff span (`jsonl`/`json`); model-free and CI-tested.

@@ -115,6 +115,19 @@ cadmus check draft.txt --rules negation,prep_case   # only these checks
 cadmus check draft.txt --quiet || echo "needs review"
 ```
 
+### Data factory
+
+Every injected error is a labelled training pair. `cadmus export` mines the
+held-out UD-GDT test sentences and emits aligned `(broken → correct)` records
+with the error type and a localized diff span — ready for fine-tuning or a
+reward model:
+
+```bash
+cadmus export --n 5000 --format jsonl > pairs.jsonl
+# {"rule":"accent","broken":"...αξιοποιησουμε...","correct":"...αξιοποιήσουμε...",
+#  "span_start":20,"broken_fragment":"η","correct_fragment":"ή"}
+```
+
 Library:
 
 ```python
@@ -128,9 +141,10 @@ for v in c.check("Η πράσινο δέντρο είναι μεγάλο."):
 ## Roadmap
 
 See [TODOs.md](TODOs.md). Highlights: verb subcategorization depth, clitics,
-broader suggestion generation (rewriting, not just flagging), and the
-correction/fine-tuning data factory. Typography and a severity taxonomy landed in
-v0.0.4; the proper-noun accent lexicon landed in v0.0.5.
+broader suggestion generation (rewriting, not just flagging), and streaming
+`watch` mode for live-gating. Typography + severity taxonomy landed in v0.0.4,
+the proper-noun accent lexicon in v0.0.5, CLI gating in v0.0.6, and the
+data-factory export in v0.0.7.
 
 ## License
 

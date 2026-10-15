@@ -42,6 +42,11 @@ def main(argv=None):
     p_eval.add_argument("--seed", type=int, default=42)
     p_eval.add_argument("-v", "--verbose", action="store_true")
 
+    p_export = sub.add_parser("export", help="emit aligned (broken->correct) training pairs from UD-GDT")
+    p_export.add_argument("--n", type=int, default=200)
+    p_export.add_argument("--seed", type=int, default=42)
+    p_export.add_argument("--format", choices=["jsonl", "json"], default="jsonl")
+
     args = p.parse_args(argv)
     checker = CadmusChecker()
 
@@ -61,6 +66,17 @@ def main(argv=None):
         from .eval.harness import run_eval
 
         print(run_eval(n=args.n, seed=args.seed, verbose=args.verbose))
+        return 0
+
+    if args.cmd == "export":
+        from .export import corpus_pairs
+
+        pairs = corpus_pairs(n=args.n, seed=args.seed)
+        if args.format == "json":
+            print(json.dumps(pairs, ensure_ascii=False, indent=2))
+        else:
+            for p in pairs:
+                print(json.dumps(p, ensure_ascii=False))
         return 0
 
     text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
