@@ -21,9 +21,12 @@ def spelling(sent, by_id, env):
             continue
         kind, suggestions = orthography.classify_unknown(w.text)
         if kind == "accent":
-            out.append((w, w, f"ACCENT: '{w.text}' → '{suggestions[0]}' (accent/diacritic error)"))
+            out.append((w, w, f"ACCENT: '{w.text}' → '{suggestions[0]}' (accent/diacritic error)",
+                        suggestions[0]))
         elif suggestions:
-            out.append((w, w, f"NONWORD: '{w.text}' (unknown word; suggestions: {', '.join(suggestions)})"))
+            out.append((w, w,
+                        f"NONWORD: '{w.text}' (unknown word; suggestions: {', '.join(suggestions)})",
+                        suggestions[0]))
         else:
             out.append((w, w, f"NONWORD: '{w.text}' (unknown word)"))
     return out

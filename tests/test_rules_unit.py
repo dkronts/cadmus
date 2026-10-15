@@ -1,8 +1,10 @@
 from fakes import FW, FakeLexicon, sent
 
+from cadmus.lexicon import PropnLexicon
 from cadmus.rules.agreement import adj_noun, det_noun, subj_verb
 from cadmus.rules.government import prep_case
 from cadmus.rules.negation import negation
+from cadmus.rules.propn import propn_accent
 from cadmus.rules.typography import typography
 
 
@@ -127,3 +129,20 @@ def test_typography_lowercase_start():
     flags = typography("Ήρθαμε χθες. ήμασταν λιγοι.")
     assert any("lowercase" in m for _, _, m, _ in flags)
     assert typography("ήρθαμε χθες.") == []
+
+
+def test_propn_accent_flagged():
+    lex = PropnLexicon(["Ρωσία"])
+    words = [FW(1, "Ρωσια", "PROPN", head=0, deprel="root")]
+    s, by_id = sent(words)
+    flags = propn_accent(s, by_id, {"propn": lex})
+    assert flags and flags[0][3] == "Ρωσία"
+
+
+def test_propn_accent_clean_and_ambiguous():
+    assert propn_accent(*sent([FW(1, "Ρωσία", "PROPN", head=0, deprel="root")]),
+                        {"propn": PropnLexicon(["Ρωσία"])}) == []
+    # ambiguous (both accented and unaccented attested) -> never flag
+    amb = PropnLexicon(["Αθηνα", "Αθήνα"])
+    assert propn_accent(*sent([FW(1, "Αθηνα", "PROPN", head=0, deprel="root")]),
+                        {"propn": amb}) == []

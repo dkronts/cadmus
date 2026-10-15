@@ -35,3 +35,13 @@ def test_negation_clean(checker):
 def test_negation_flagged(checker):
     assert any(v.rule == "negation" for v in checker.check("Θέλω να δεν έρχεσαι."))
     assert any(v.rule == "negation" for v in checker.check("Μην πήγαμε χθες."))
+
+
+def test_accent_carries_suggestion(checker):
+    vs = [v for v in checker.check("Αύριο διαβασω το μάθημα.") if v.rule == "spelling"]
+    assert vs and vs[0].suggestion == "διαβάσω"
+
+
+def test_propn_accent_end_to_end(checker):
+    vs = [v for v in checker.check("Ταξίδεψα στη Ρωσια.") if v.suggestion == "Ρωσία"]
+    assert vs, "expected a proper-noun accent correction for 'Ρωσια'"

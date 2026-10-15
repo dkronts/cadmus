@@ -71,11 +71,11 @@ def is_known(token):
 def classify_unknown(token):
     """Returns (kind, suggestions) with kind in {'accent','nonword'}."""
     d = _dictionary()
-    raw = d.suggest(token)
+    raw = list(d.suggest(token))
     suggestions = [s for s in raw if s != token][:3]
-    base = strip_accents(token)
+    base = strip_accents(token).lower()
     for s in raw:
-        if strip_accents(s) == base:
+        if strip_accents(s).lower() == base:
             return "accent", [s]
     return "nonword", suggestions
 

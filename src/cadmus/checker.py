@@ -39,6 +39,7 @@ class CadmusChecker:
         self.nlp = nlp or load_pipeline()
         self.use_lexicon = use_lexicon
         self._lexicon = None
+        self._propn = None
         self._damp_stats = {"suppressed": 0, "fired": 0}
 
     def lexicon(self):
@@ -48,6 +49,16 @@ class CadmusChecker:
             except Exception:
                 self.use_lexicon = False
         return self._lexicon
+
+    def propn(self):
+        if self._propn is None:
+            try:
+                from .lexicon import PropnLexicon
+
+                self._propn = PropnLexicon.load()
+            except Exception:
+                self._propn = False
+        return self._propn or None
 
     def check(self, text):
         doc = self.nlp(text)
@@ -65,6 +76,7 @@ class CadmusChecker:
             env = {}
             if self.use_lexicon:
                 env["lexicon"] = self.lexicon()
+            env["propn"] = self.propn()
             for name, fn in RULES.items():
                 for flag in fn(sent, by_id, env):
                     w, h, msg = flag[0], flag[1], flag[2]

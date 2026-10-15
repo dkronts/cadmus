@@ -36,7 +36,7 @@ text → stanza (Greek: tokenize, POS, morph features, lemmas, dependencies)
 Precision-first: rules interrogate a disambiguated analysis and flag
 contradictions; they never require a full parse to succeed.
 
-### Rules in v0.0.4
+### Rules in v0.0.5
 
 | Rule | Catches |
 |---|---|
@@ -47,26 +47,34 @@ contradictions; they never require a full parse to succeed.
 | `spelling` | non-words, accent/diacritic errors (incl. enclitic double accents), Greek/Latin script mixing — via hunspell `el_GR` (spylls); skips proper-noun spelling and acronyms |
 | `verb_valence` | unexpected object patterns per verb, from subcategorization frames mined out of UD-GDT; nominative "objects" (postverbal subjects) are exempt |
 | `negation` | δεν/μην selection — subjunctive context detected positionally (να/ας/μήπως), imperative by missing Tense+Mood |
+| `propn_accent` | mis-accented proper nouns (`Ρωσια` → `Ρωσία`, `Παπαδοπουλος` → `Παπαδόπουλος`) against a 169k-form title lexicon mined from Wikipedia + UD-GDT; flags only when the de-accented form maps to a **unique** attested form (ambiguous → silent) |
 | `typography` | Greek punctuation conventions: `?` → `;`, stray space before punctuation, missing space after, double spaces, lowercase after a sentence terminator (text-level, no parser needed) |
 
 A treebank-derived **form lexicon** acts as a dampener: when the analyzer's
 reading of a word is impossible per the treebank, flags involving it are
 suppressed (tagger-error tolerance).
 
-### Measured (v0.0.4, `cadmus eval`, 150 UD-GDT test sentences)
+### Measured (v0.0.5, `cadmus eval`, 200 UD-GDT test sentences)
 
 | Error type (injected) | Recall |
 |---|---|
-| typos / non-words | 92% |
-| Greek/Latin homoglyph mixing | 95% |
 | accent errors | 95% |
-| wrong article form | 62% |
+| Greek/Latin homoglyph mixing | 96% |
+| typos / non-words | 88% |
+| proper-noun accent | 62% |
+| wrong article form | 68% |
 | δεν/μην swap | 100% |
 | typography | 100% |
 
 False positives on clean text: ~7 per 100 sentences (mostly rare-word spelling
-and a handful of tagger artifacts). Every violation carries a `severity`
-(`low`/`medium`/`high`) so callers can filter style nits from hard errors.
+and a handful of tagger artifacts); `typography` and `propn_accent` fire **zero**
+false positives. Every violation carries a `severity` (`low`/`medium`/`high`) so
+callers can filter style nits from hard errors.
+
+The proper-noun lexicon is mined from the Greek Wikipedia title dump plus every
+`PROPN` surface form in UD-GDT (~169k forms, cached under `~/.cache/cadmus`).
+Recall is capped by design: inflected or foreign names whose de-accented form is
+ambiguous are left alone rather than guessed.
 
 ## Install
 
@@ -110,10 +118,10 @@ for v in c.check("Η πράσινο δέντρο είναι μεγάλο."):
 
 ## Roadmap
 
-See [TODOs.md](TODOs.md). Highlights: proper-noun lexicon, verb
-subcategorization depth, clitics, broader suggestion generation (rewriting, not
-just flagging), and the correction/fine-tuning data factory. Typography and a
-severity taxonomy landed in v0.0.4.
+See [TODOs.md](TODOs.md). Highlights: verb subcategorization depth, clitics,
+broader suggestion generation (rewriting, not just flagging), and the
+correction/fine-tuning data factory. Typography and a severity taxonomy landed in
+v0.0.4; the proper-noun accent lexicon landed in v0.0.5.
 
 ## License
 

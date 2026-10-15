@@ -90,8 +90,27 @@ def corrupt_spacing(text, rng):
     return text[:i] + " ," + text[i + 1:], "typography"
 
 
+def corrupt_propn_accent(text, rng):
+    acc = "άέήίόύώ"
+    deacc = str.maketrans(acc, "αεηιουω")
+    cands = []
+    for m in re.finditer(r"(?<![\w])([Α-Ω][α-ωάέήίόύώ]+)", text):
+        if m.start(1) == 0:
+            continue
+        word = m.group(1)
+        if any(c in acc for c in word):
+            cands.append((m.start(1), word))
+    if not cands:
+        return None
+    pos, word = rng.choice(cands)
+    idxs = [i for i, c in enumerate(word) if c in acc]
+    i = rng.choice(idxs)
+    new = word[:i] + word[i].translate(deacc) + word[i + 1:]
+    return text[:pos] + new + text[pos + len(word):], "propn_accent"
+
+
 ALL = [corrupt_det, corrupt_typo, corrupt_accent, corrupt_homoglyph,
-       corrupt_negation, corrupt_question_mark, corrupt_spacing]
+       corrupt_negation, corrupt_question_mark, corrupt_spacing, corrupt_propn_accent]
 
 
 def corrupt(text, rng):

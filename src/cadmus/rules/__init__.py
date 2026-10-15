@@ -2,6 +2,7 @@ from .agreement import adj_noun, det_noun, subj_verb
 from .government import prep_case
 from .negation import negation
 from .orthography import spelling
+from .propn import propn_accent
 from .valence import verb_valence
 
 RULES = {
@@ -12,6 +13,7 @@ RULES = {
     "spelling": spelling,
     "verb_valence": verb_valence,
     "negation": negation,
+    "propn_accent": propn_accent,
 }
 
 DAMPENABLE = {"det_noun", "adj_noun", "subj_verb", "prep_case", "verb_valence", "negation"}

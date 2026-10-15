@@ -32,8 +32,9 @@ clean. Fixed gaps:
 - [x] noun-gender overrides from lemma attestations (missing-feats nouns covered)
 
 Newly surfaced gaps:
-- [ ] PROPN coverage: place-name/person accent errors (Ρωσια, Τύορκους) are
-      skipped by design — needs a proper-noun lexicon (Wikipedia titles?)
+- [x] PROPN coverage: place-name/person accent errors (Ρωσια, Τύορκους) —
+      added a proper-noun accent rule backed by a Wikipedia+UD title lexicon
+      (see v0.0.5). Inflected/foreign forms stay silent by design (ambiguous)
 - [ ] rare nouns absent from UD train (πρόποδες) still FP-prone via tagger
 - [ ] det corruption misses when stanza re-parses structure (attach changes)
 - [ ] stanza emits no Mood=Sub for Greek: any future mood-dependent rule must
@@ -67,7 +68,23 @@ Newly surfaced gaps:
 - [ ] Proper-noun casing
 - [ ] Final -ν correctness (τον/το, στην/στη) where lexicon supports it
 
-## v0.0.5 — Usability & integration
+## v0.0.5 — Proper-noun lexicon + accent fixes
+
+- [x] `PropnLexicon`: proper-noun surface forms mined from the Greek Wikipedia
+      title dump (`elwiki-latest-all-titles-in-ns0`) + every `PROPN` form in
+      UD-GDT (~169k forms), cached as `~/.cache/cadmus/propn.v1.json`
+- [x] `propn_accent` rule: flags a capitalized token whose de-accented form maps
+      to a **unique** attested form differing only by accents; ambiguous or
+      unknown forms stay silent (precision-first, 0 FP on clean text)
+- [x] Fixed a dead-code bug in `classify_unknown`: `spylls.suggest()` returns a
+      generator that was consumed before the accent branch ran, so accent errors
+      were always reported as NONWORD. Now `διαβασω → ACCENT → διαβάσω`, and
+      spelling violations carry a structured `suggestion`
+- [x] Eval target `propn_accent` counts detection by `propn_accent` **or**
+      `spelling` (a de-accented name the tagger re-labels as a common word is
+      caught by the spelling layer); recall 62%, 0 FP
+
+## v0.0.6 — Usability & integration
 
 - [~] Suggestion generation (not just flags): `det_noun` now emits the
       corrected article from the paradigm table; broader per-rule suggestions
@@ -102,3 +119,9 @@ Newly surfaced gaps:
       rule unit tests + GitHub Actions CI. Measured (150 UD-GDT test sentences):
       recall — non-words 92%, script-mix 95%, accents 95%, wrong article 62%,
       δεν/μην 100%, typography 100%; ~7 FPs/100 clean (typography 0 FP).
+- [x] v0.0.5 — proper-noun accent lexicon (Wikipedia titles + UD-GDT PROPNs,
+      ~169k forms) and `propn_accent` rule; fixed the `classify_unknown`
+      generator bug so accent errors report as ACCENT with suggestions.
+      Measured (200 UD-GDT test sentences): recall — accents 95%, script-mix 96%,
+      non-words 88%, proper-noun accent 62%, wrong article 68%, δεν/μην 100%,
+      typography 100%; ~7 FPs/100 clean (typography and propn_accent 0 FP).

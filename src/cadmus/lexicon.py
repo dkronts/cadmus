@@ -1,7 +1,10 @@
 """Local data assets: downloads, caching, UD-derived lexicon and verb frames."""
 
+import gzip
 import json
 import os
+import re
+import unicodedata
 import urllib.request
 from collections import Counter
 from pathlib import Path
@@ -15,8 +18,17 @@ ASSETS = {
     "el_gdt-ud-test.conllu": "https://raw.githubusercontent.com/UniversalDependencies/UD_Greek-GDT/master/el_gdt-ud-test.conllu",
 }
 
+WIKI_TITLES_URL = "https://dumps.wikimedia.org/elwiki/latest/elwiki-latest-all-titles-in-ns0.gz"
+WIKI_TITLES_FILE = "elwiki-titles.gz"
+
 AGREEMENT_KEYS = ("Case", "Gender", "Number", "Person")
 CORE_DEPRELS = {"obj", "iobj", "ccomp", "xcomp", "expl"}
+_GREEK_TITLE = re.compile(r"^[Α-Ωα-ωάέήίόύώϊϋΐΰ]+(ς)?$")
+
+
+def _deaccent(s):
+    d = unicodedata.normalize("NFD", s)
+    return unicodedata.normalize("NFC", "".join(c for c in d if not unicodedata.combining(c)))
 
 
 def ensure_asset(name):
@@ -198,3 +210,72 @@ class VerbFrames:
         known = counter.most_common(3)
         pretty = " | ".join(f"«{' + '.join(k) if any(k) else 'no core object'}» ({v})" for k, v in known)
         return f"VERB-VALENCE: '{verb_word.text}' ({verb_word.lemma}) usually takes {pretty}, here: {' + '.join(core)}"
+
+
+class PropnLexicon:
+    """Proper-noun surface forms (Wikipedia titles + UD-train PROPNs).
+
+    Used only to detect proper-noun ACCENT errors: a token whose de-accented
+    form maps to exactly one attested form that differs from it only by accents
+    is treated as a mis-accented proper noun. Ambiguous or unknown forms are
+    never flagged (precision-first)."""
+
+    ASSET = "propn.v1.json"
+
+    def __init__(self, forms):
+        self.forms = {f.lower() for f in forms}
+        self.accent_index = {}
+        for f in self.forms:
+            self.accent_index.setdefault(_deaccent(f), set()).add(f)
+
+    @classmethod
+    def _ensure_wiki(cls):
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        path = CACHE_DIR / WIKI_TITLES_FILE
+        if not path.exists() or path.stat().st_size == 0:
+            tmp = path.with_suffix(".part")
+            urllib.request.urlretrieve(WIKI_TITLES_URL, tmp)
+            os.replace(tmp, path)
+        return path
+
+    @classmethod
+    def build(cls):
+        forms = set()
+        train = ensure_asset("el_gdt-ud-train.conllu")
+        for block in iter_conllu_sentences(train):
+            for line in block:
+                if line.startswith("#") or "\t" not in line:
+                    continue
+                cols = line.split("\t")
+                if cols[3] == "PROPN" and "-" not in cols[0] and "." not in cols[0]:
+                    forms.add(cols[1].lower())
+        with gzip.open(cls._ensure_wiki(), "rt", encoding="utf-8") as fh:
+            for i, line in enumerate(fh):
+                if i == 0:
+                    continue
+                title = re.sub(r"\(.*?\)", " ", line.strip().replace("_", " "))
+                for tok in title.split():
+                    if len(tok) >= 3 and _GREEK_TITLE.match(tok):
+                        forms.add(tok.lower())
+        return cls(forms)
+
+    @classmethod
+    def load(cls):
+        path = CACHE_DIR / cls.ASSET
+        if path.exists():
+            return cls(json.loads(path.read_text(encoding="utf-8")))
+        lex = cls.build()
+        path.write_text(json.dumps(sorted(lex.forms), ensure_ascii=False), encoding="utf-8")
+        return lex
+
+    def accent_suggestion(self, form):
+        f = form.lower()
+        if f in self.forms:
+            return None
+        cands = self.accent_index.get(_deaccent(f))
+        if not cands or len(cands) != 1:
+            return None
+        cand = next(iter(cands))
+        if cand == f:
+            return None
+        return cand[0].upper() + cand[1:] if form[:1].isupper() else cand

@@ -29,6 +29,7 @@ RULE_SEVERITY = {
     "prep_case": "high",
     "verb_valence": "medium",
     "negation": "high",
+    "propn_accent": "low",
     "copula_pred": "medium",
     "rel_agreement": "medium",
     "na_form": "medium",
