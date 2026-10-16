@@ -49,6 +49,14 @@ def main(argv=None):
     p_export.add_argument("--with-check", action="store_true", dest="with_check",
                           help="run the checker on each broken sentence and attach detected/suggestion (needs the model)")
 
+    p_watch = sub.add_parser("watch", help="check a stream of texts (one per line) as they arrive")
+    p_watch.add_argument("path", nargs="?", help="file to read; omit to read stdin")
+    p_watch.add_argument("--json", action="store_true", dest="as_json")
+    p_watch.add_argument("--severity", choices=["low", "medium", "high"],
+                         help="only report violations at or above this severity")
+    p_watch.add_argument("--rules", metavar="R1,R2",
+                         help="comma-separated rule ids to report")
+
     args = p.parse_args(argv)
     checker = CadmusChecker()
 
@@ -81,6 +89,21 @@ def main(argv=None):
         else:
             for p in pairs:
                 print(json.dumps(p, ensure_ascii=False))
+        return 0
+
+    if args.cmd == "watch":
+        from .stream import iter_checked
+
+        rules = args.rules.split(",") if args.rules else None
+        stream = open(args.path, encoding="utf-8") if args.path else sys.stdin
+        for text, vs in iter_checked(stream, checker.check, min_severity=args.severity, rules=rules):
+            if args.as_json:
+                print(json.dumps({"text": text, "violations": [v.as_dict() for v in vs]},
+                                 ensure_ascii=False), flush=True)
+            elif vs:
+                for v in vs:
+                    extra = f"  → {v.suggestion}" if v.suggestion else ""
+                    print(f"[{v.rule}/{v.severity}] {v.message}{extra}  :: {text}", flush=True)
         return 0
 
     text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()

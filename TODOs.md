@@ -133,8 +133,11 @@ Newly surfaced gaps:
 ## v0.0.10 — Streaming & batch
 
 - [ ] Batch mode (stanza batch processing) for whole documents
-- [ ] `watch` mode: read a growing file / named pipe — for live-gating
-      local LLM output (ollama / llama.cpp server logs)
+- [x] `watch` mode: check a stream of texts (one per line) as they arrive —
+      silent on clean lines, prints violations per record, `--json`/`--severity`/
+      `--rules` supported. Reads stdin or a file; for a growing file pipe it
+      (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
+      (injected checker) keeps it model-free and CI-tested
 
 ## Later / research
 
@@ -175,3 +178,6 @@ Newly surfaced gaps:
 - [x] v0.0.9 — `export --with-check`: per-pair `detected`/`detected_rules`/
       `suggestion` from the checker (span-overlap), via a dependency-injected
       `annotate_with_check` that keeps the export module stanza-free.
+- [x] v0.0.10 — `watch` mode: live-gate a stream of texts (one per line) from
+      stdin or a file; silent on clean lines, `--json`/`--severity`/`--rules`.
+      Pure `stream.iter_checked` helper (injected checker), model-free CI test.

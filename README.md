@@ -122,6 +122,17 @@ cadmus check draft.txt --rules negation,prep_case   # only these checks
 cadmus check draft.txt --quiet || echo "needs review"
 ```
 
+### Live-gating a model
+
+`watch` checks a stream of texts (one per line) as they arrive — silent on clean
+lines, one line per violation otherwise. Pipe a server log or a JSONL stream:
+
+```bash
+tail -f ollama.log | cadmus watch                 # flag as they stream by
+cadmus watch responses.jsonl --json               # one JSON verdict per record
+cadmus watch responses.jsonl --severity medium    # ignore style nits
+```
+
 ### Data factory
 
 Every injected error is a labelled training pair. `cadmus export` mines the
@@ -156,11 +167,11 @@ for v in c.check("Η πράσινο δέντρο είναι μεγάλο."):
 ## Roadmap
 
 See [TODOs.md](TODOs.md). Highlights: verb subcategorization depth, clitics,
-broader suggestion generation (rewriting, not just flagging), and streaming
-`watch` mode for live-gating. Typography + severity taxonomy landed in v0.0.4,
-the proper-noun accent lexicon in v0.0.5, CLI gating in v0.0.6, the data-factory
-export in v0.0.7, relative-pronoun agreement in v0.0.8, and `export --with-check`
-(a per-pair catch report) in v0.0.9.
+broader suggestion generation (rewriting, not just flagging), and batch
+processing. Typography + severity taxonomy landed in v0.0.4, the proper-noun
+accent lexicon in v0.0.5, CLI gating in v0.0.6, the data-factory export in
+v0.0.7, relative-pronoun agreement in v0.0.8, `export --with-check` in v0.0.9,
+and streaming `watch` mode for live-gating in v0.0.10.
 
 ## License
 
