@@ -45,7 +45,7 @@ claims). Every claim in the README must be backed by a measurement in the repo.
 ## The loop — one shippable increment per cycle, repeated until a stop condition
 
 ```
-RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → (repeat | brainstorm | stop)
+RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → COMMIT → (repeat | brainstorm | stop)
 ```
 
 1. **RECON**: read `TODOs.md` + `METRICS.md` + recent `git log`; run `cadmus
@@ -55,7 +55,7 @@ RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → (repe
    (a) **fill a known gap** — an open item under "Newly surfaced gaps" or a
    measured weakness in `METRICS.md`'s error distribution (biggest measured
    gap first); else (b) **finish a TODO** from the backlog below; else
-   (c) if gaps and TODOs are exhausted → **BRAINSTORM** (step 8). Skip
+   (c) if gaps and TODOs are exhausted → **BRAINSTORM** (step 9). Skip
    blocked items.
 3. **GATE** (rules only): prototype over the 456-sentence clean sweep through
    the analyzer + targeted error probes. `0 FP` + recall > 0 → implement.
@@ -72,12 +72,21 @@ RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → (repe
    look for them — misses, FPs, coverage limits, analyzer quirks); append the
    run's stats to `METRICS.md`; README measured table only if eval numbers
    changed.
-8. **BRAINSTORM** (only when gaps + TODOs are exhausted): propose next steps
+8. **COMMIT** (every cycle ends clean): stage, commit, and push anything
+   still dirty after RECORD, as dkronts
+   <211030943+dkronts@users.noreply.github.com>, with CI green. SHIP already
+   committed the code through VERIFY — COMMIT sweeps the writes made after
+   it (RECORD's `TODOs.md`/`METRICS.md`/README edits). No cycle may end with
+   a dirty or unpushed tree, including rejection-only cycles; if nothing new
+   was written, no extra commit is needed.
+9. **BRAINSTORM** (only when gaps + TODOs are exhausted): propose next steps
    as concrete candidate items (value / effort / risk / how to measure) under
-   `TODOs.md` → "Brainstorm — next steps", then keep looping autonomously on
+   `TODOs.md` → "Brainstorm — next steps", run **COMMIT** again on those
+   writes, then keep looping autonomously on
    the candidates that don't hit the decision matrix; **ASK USER** for the
    ones that do. Stop only if brainstorming yields nothing actionable.
-9. **REPEAT**: "next" means re-enter at **RECON**, never at SELECT — every
+10. **REPEAT**: "next" means re-enter at **RECON** after a clean COMMIT —
+   never at SELECT. Every
    cycle re-measures (eval + diagnose + git log) so selection runs on fresh
    data, and `METRICS.md`/`TODOs.md` are the only carried-over state. The
    loop is unbounded: only the STOP conditions (or an ASK USER interrupt)
@@ -138,5 +147,6 @@ CI red twice on the same change; environment broken (no stanza, no assets, no
 network to GitHub); any invariant conflict.
 
 **Definition of done for a run**: either a green-pushed increment, or a
-documented rejection in `TODOs.md`, or a stop-report. Never leave `main` red
-or claims unmeasured.
+documented rejection in `TODOs.md`, or a stop-report — each ending with a
+clean, pushed tree. Never leave `main` red, the tree dirty, or claims
+unmeasured.
