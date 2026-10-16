@@ -135,6 +135,18 @@ cadmus watch responses.jsonl --json               # one JSON verdict per record
 cadmus watch responses.jsonl --severity medium    # ignore style nits
 ```
 
+### Batch
+
+`watch` parses each line as it arrives (lowest latency). When you already have a
+whole file of texts and want throughput, `batch` runs the analyzer's batched
+processor instead of one call per line:
+
+```bash
+cadmus batch responses.txt                  # one text per line, batched
+cadmus batch responses.txt --batch-size 64  # larger pipeline batches
+cadmus batch responses.txt --json           # one JSON verdict per record
+```
+
 ### Diagnostics
 
 Rules can only fire on features the tagger emits. `cadmus diagnose` reports how

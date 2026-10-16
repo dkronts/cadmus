@@ -40,3 +40,40 @@ class FakeLexicon:
 def sent(words):
     by_id = {w.id: w for w in words}
     return FS(words), by_id
+
+
+class FakeDoc:
+    def __init__(self, text):
+        self.text = text
+        self.sentences = []
+        self.tokens = []
+
+
+class FakeNLP:
+    """Minimal stanza-pipeline stand-in: callable and supports ``pipe``."""
+
+    def __init__(self):
+        self.call_count = 0
+        self.pipe_calls = 0
+
+    def __call__(self, text):
+        self.call_count += 1
+        return FakeDoc(text)
+
+    def pipe(self, texts):
+        self.pipe_calls += 1
+        return [FakeDoc(t) for t in texts]
+
+
+class FakeNLPProcessMany(FakeNLP):
+    """stanza <=1.15: has ``process_many`` but no ``pipe``."""
+
+    def __init__(self):
+        super().__init__()
+        self.process_many_calls = 0
+
+    def process_many(self, texts):
+        self.process_many_calls += 1
+        return [FakeDoc(t) for t in texts]
+
+    pipe = None  # emulate the missing attribute

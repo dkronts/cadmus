@@ -75,8 +75,19 @@ Newly surfaced gaps:
       fires mid-text so bare lowercase sentence starts are not penalized
 - [ ] Quote style `«»` — deferred to an optional **style tier** (straight
       quotes are common and not an error; flagging them cost precision)
-- [ ] Proper-noun casing
-- [ ] Final -ν correctness (τον/το, στην/στη) where lexicon supports it
+- [ ] Proper-noun casing — **REJECTED (precision)**. A strict policy (sentence-
+      internal, fully-lowercase, in `PropnLexicon`, not a dictionary word, not a
+      treebank common word) still yields ~5 FP / 456 clean sentences (1.1%), all
+      systematic: Greek *lowercases* demonyms and adjectives (`ολλανδός`,
+      `τούρκος`, `ευρωπαίοι`, `ευρωζώνη`, `ερυθηματώδης`) that nonetheless carry
+      Wikipedia titles, so the title dump conflates always-capitalized proper
+      nouns with correctly-lowercase ones. No cheap offline filter separates them;
+      a safe rule needs a curated always-capitalized (person/place-only) list we
+      don't have. Shipping it would break the 0-FP invariant every other rule holds.
+- [ ] Final -ν correctness (τον/το, στην/στη) — **REJECTED (prescriptive)**.
+      The ν-variant is free variation (τον/το, στην/στη both standard); there is no
+      grammatical error to flag, only house style, and any rule would fire on
+      correct text. Belongs in a style tier, not the correctness layer.
 
 ## v0.0.5 — Proper-noun lexicon + accent fixes
 
@@ -141,7 +152,10 @@ Newly surfaced gaps:
 
 ## v0.0.10 — Streaming & batch
 
-- [ ] Batch mode (stanza batch processing) for whole documents
+- [x] Batch mode: `CadmusChecker.check_batch(texts)` runs the pipeline's batched
+      processor (`pipe` on newer stanza, `process_many` on <=1.15, per-text
+      fallback) and `cadmus batch` checks a file/stdin of one-text-per-line in
+      chunks (`--batch-size`); model-free tests cover both APIs + chunking
 - [x] `watch` mode: check a stream of texts (one per line) as they arrive —
       silent on clean lines, prints violations per record, `--json`/`--severity`/
       `--rules` supported. Reads stdin or a file; for a growing file pipe it
@@ -151,10 +165,17 @@ Newly surfaced gaps:
 ## Later / research
 
 - [ ] Confidence gating + escalation to a local Greek-tuned LLM judge
-      (Krikri-8B / Meltemi-7B) for low-confidence spans
+      (Krikri-8B / Meltemi-7B) for low-confidence spans — **needs external
+      resource**: no local Greek-tuned model is installed; requires a multi-GB
+      model download + GPU. Deferred until such a model is provisioned.
 - [ ] Error corpus from real quantized-MoE outputs (collect + annotate;
-      calibrate the corruption taxonomy against it)
-- [ ] LanguageTool Greek baseline comparison on the same eval set
+      calibrate the corruption taxonomy against it) — **needs external
+      resource**: requires collecting/annotating real outputs (human labeling);
+      not derivable offline.
+- [ ] LanguageTool Greek baseline comparison on the same eval set — **needs
+      external resource**: neither the `languagetool` CLI nor
+      `language_tool_python` is installed (and the CLI needs a JRE + a large
+      download). Deferred until the tool is provisioned.
 - [x] Diagnostics mode: `cadmus diagnose` reports, per UPOS, how often each
       expected feature (Gender/Case/Number/Tense/Person) is present, flagging
       low-coverage features where rules will under-fire (shipped in v0.0.11)
@@ -203,3 +224,8 @@ Newly surfaced gaps:
        verb whose surface form is attested only as a past indicative (new
        `VerbForms` UD-GDT lexicon). Both 0 FP on clean text; model-free unit
        tests + integration tests.
+- [x] v0.0.13 — batch mode: `check_batch` (batched pipeline via `pipe`/
+       `process_many`/fallback) + `cadmus batch` CLI for one-text-per-line input;
+       model-free tests for both batch APIs and chunking. Documented two rejected
+       rules (proper-noun casing, final -ν) with the precision evidence, and the
+       external-resource blockers on the remaining research items.

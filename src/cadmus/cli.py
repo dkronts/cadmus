@@ -57,6 +57,16 @@ def main(argv=None):
     p_watch.add_argument("--rules", metavar="R1,R2",
                          help="comma-separated rule ids to report")
 
+    p_batch = sub.add_parser("batch", help="check many texts (one per line) via batched processing")
+    p_batch.add_argument("path", nargs="?", help="file to read; omit to read stdin")
+    p_batch.add_argument("--json", action="store_true", dest="as_json")
+    p_batch.add_argument("--severity", choices=["low", "medium", "high"],
+                         help="only report violations at or above this severity")
+    p_batch.add_argument("--rules", metavar="R1,R2",
+                         help="comma-separated rule ids to report")
+    p_batch.add_argument("--batch-size", type=int, default=32, dest="batch_size",
+                         help="texts per pipeline batch (default 32)")
+
     p_diag = sub.add_parser("diagnose", help="report analyzer feature coverage (why rules stay silent)")
     p_diag.add_argument("path", nargs="?", help="text file (UTF-8); omit to read stdin")
 
@@ -107,6 +117,21 @@ def main(argv=None):
                 for v in vs:
                     extra = f"  → {v.suggestion}" if v.suggestion else ""
                     print(f"[{v.rule}/{v.severity}] {v.message}{extra}  :: {text}", flush=True)
+        return 0
+
+    if args.cmd == "batch":
+        rules = args.rules.split(",") if args.rules else None
+        stream = open(args.path, encoding="utf-8") if args.path else sys.stdin
+        lines = [ln.rstrip("\n") for ln in stream if ln.strip()]
+        for text, vs in zip(lines, checker.check_batch(lines, batch_size=args.batch_size)):
+            vs = filter_violations(vs, min_severity=args.severity, rules=rules)
+            if args.as_json:
+                print(json.dumps({"text": text, "violations": [v.as_dict() for v in vs]},
+                                 ensure_ascii=False))
+            elif vs:
+                for v in vs:
+                    extra = f"  → {v.suggestion}" if v.suggestion else ""
+                    print(f"[{v.rule}/{v.severity}] {v.message}{extra}  :: {text}")
         return 0
 
     if args.cmd == "diagnose":

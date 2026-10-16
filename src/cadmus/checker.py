@@ -72,7 +72,31 @@ class CadmusChecker:
         return self._verbforms or None
 
     def check(self, text):
-        doc = self.nlp(text)
+        return self._analyze(text, self.nlp(text))
+
+    def check_batch(self, texts, batch_size=32):
+        """Check many texts efficiently via the pipeline's batched processor.
+
+        Returns a list of violation-lists, one per input text, in order.
+        Supports both the ``pipe`` (newer stanza) and ``process_many``
+        (stanza <=1.15) batch APIs, falling back to per-text calls.
+        """
+        texts = list(texts)
+        results = []
+        for i in range(0, len(texts), batch_size):
+            chunk = texts[i:i + batch_size]
+            for text, doc in zip(chunk, self._iter_docs(chunk)):
+                results.append(self._analyze(text, doc))
+        return results
+
+    def _iter_docs(self, texts):
+        if callable(getattr(self.nlp, "pipe", None)):
+            return self.nlp.pipe(texts)
+        if callable(getattr(self.nlp, "process_many", None)):
+            return self.nlp.process_many(texts)
+        return [self.nlp(t) for t in texts]
+
+    def _analyze(self, text, doc):
         violations = []
         for s, e, msg, sug in typography(text):
             containing = next(
