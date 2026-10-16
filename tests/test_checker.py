@@ -92,3 +92,30 @@ def test_num_noun_flagged(checker):
 def test_num_noun_clean(checker):
     assert [v for v in checker.check("Τρεις άνδρες φύγαν.") if v.rule == "num_noun"] == []
     assert [v for v in checker.check("Τρία παιδιά φύγαν.") if v.rule == "num_noun"] == []
+
+
+def test_spelling_coverage_suppression(checker):
+    cases = {
+        "Χρυσοπηγής": ("Μια από τις πιο όμορφες εικόνες της Σίφνου είναι το εκκλησάκι "
+                       "της Παναγίας της Χρυσοπηγής που βρίσκεται χτισμένο σε ένα πελώριο βράχο."),
+        "ευρωζώνη": ("Η Δανία, η Σουηδία και η Μεγάλη Βρετανία καλούνται να προσχωρήσουν "
+                     "στην ευρωζώνη πριν από τη διεύρυνση προς Ανατολάς."),
+        "ερυθηματώδης": ("Ο διαβήτης τύπου Β και ο ερυθηματώδης λύκος απασχολούν την έρευνα."),
+    }
+    for token, sentence in cases.items():
+        vs = [v for v in checker.check(sentence)
+              if v.rule == "spelling" and f"'{token}'" in v.message]
+        assert not vs, f"expected no spelling flag for lexicon-covered '{token}': {vs}"
+
+
+def test_spelling_abbreviations_and_elisions_clean(checker):
+    assert [v for v in checker.check("Το νησί απέχει 12 χλμ. από την πρωτεύουσα.")
+            if v.rule == "spelling"] == []
+    assert [v for v in checker.check("Το έμαθε απ' τους ίδιους τους γείτονες χθες.")
+            if v.rule == "spelling"] == []
+
+
+def test_spelling_unknown_word_still_flagged(checker):
+    vs = [v for v in checker.check("Ο σκανταλοτρυγόνος τραγουδά δυνατά.")
+          if v.rule == "spelling"]
+    assert vs and "σκανταλοτρυγόνος" in vs[0].message

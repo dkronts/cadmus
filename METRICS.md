@@ -5,25 +5,29 @@ Append one run-log entry per shipped increment; keep the distributions
 current so SELECT stays data-driven. Numbers are measurements, not claims —
 re-measure, don't trust.
 
-## Current baseline (v0.0.14, 2026-10-16)
+## Current baseline (v0.0.15, 2026-10-16)
 
 - Rules: 12 shipped — `det_noun`, `adj_noun`, `subj_verb`, `rel_agreement`,
   `copula_pred`, `na_form`, `num_noun`, `prep_case`, `spelling`,
   `verb_valence`, `negation`, `propn_accent` — plus text-level `typography`.
-- Tests: 78 collected (59 model-free in the CI subset), all green.
+- Tests: 89 collected (67 model-free in the CI subset), all green.
 - Eval (UD-GDT clean test, fixed seed): recall — accents 95%, script-mix 96%,
   non-words 88%, proper-noun accent 62%, wrong article 68%, δεν/μην 100%,
   typography 100%. `rel_agreement`, `copula_pred`, `na_form`, `num_noun` have
   no corruption-pool samples — validated by targeted probes only.
-- Precision: ~7 FP / 100 clean sentences. 0-FP rules: `typography`,
-  `propn_accent`, `rel_agreement`, `copula_pred`, `na_form`, `num_noun`.
+- Precision: ~7 FP / 100 clean sentences (eval pool). Full 456-sentence clean
+  sweep: `spelling` 22 FP (was 77 pre-v0.0.15); other rules unchanged
+  (`prep_case` 26, `det_noun` 23, `verb_valence` 11, `adj_noun` 9,
+  `rel_agreement` 9, `typography` 5, `subj_verb` 5, `propn_accent` 1).
+  0-FP rules on the pool: `typography`, `propn_accent`, `rel_agreement`,
+  `copula_pred`, `na_form`, `num_noun`.
 - Perf (CPU): model load ~5.4 s; single ~35 ms/sentence; batch ~19.4 sent/s.
 
 ## Error distribution (FP by rule, latest ~100-clean sweep — approximate)
 
 | Rule | FP / 100 clean | Dominant cause |
 |---|---|---|
-| spelling | ~5 | rare words / PROPNs outside the dictionaries |
+| spelling | ~5 pool / 22 per 456 full (was 77) | residue: source typos + script-mix homoglyphs + words in no repo resource (see v0.0.15 REJECTED) |
 | det_noun | ~4 | stanza re-parse on corrupted input; rare-noun gender |
 | adj_noun | ~1 | genitive modifier misattachment |
 | subj_verb | ~1 | coordination parse artifacts |
@@ -44,6 +48,11 @@ re-measure, don't trust.
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
 - rare nouns absent from UD train still FP-prone via the tagger
+- `PropnLexicon.forms` holds ~5.5k unaccented title variants (`απο`, `βορεια`)
+  — unsafe as a known-word set for unaccented tokens (accent recall 87→60%
+  when trusted; v0.0.15 restricts PROPN coverage to accented tokens)
+- spelling residue on the full clean set (22 FP) is correct detection of
+  imperfect source text — the 0-FP gate is unreachable without gutting the rule
 - det corruption misses when stanza re-parses structure (attach changes)
 - no `Mood=Sub` in Greek stanza — mood rules need positional context
 - `na_form` / `verb_valence` recall bounded by treebank coverage
@@ -57,3 +66,4 @@ perf if re-measured.
 | Version | Date | Increment | Tests | Recall Δ | FP Δ | Perf |
 |---|---|---|---|---|---|---|
 | v0.0.14 | 2026-10 | `num_noun` (surface-form numeral gender) | 78 | targeted probes only | 0 | — |
+| v0.0.15 | 2026-10 | spelling: env-lexicon coverage suppression (accented-only PROPN) + abbreviation/elision guards | 89 | unchanged (accent 87%, nonword 96%, script-mix 95%, propn_accent 78%) | spelling 77→22 per 456 clean; other rules unchanged | — |

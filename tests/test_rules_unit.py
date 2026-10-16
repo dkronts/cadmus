@@ -1,10 +1,12 @@
 from fakes import FW, FakeLexicon, sent
 
+from cadmus import orthography as orth_layer
 from cadmus.data import filter_violations
-from cadmus.lexicon import PropnLexicon
+from cadmus.lexicon import FormLexicon, PropnLexicon
 from cadmus.rules.agreement import adj_noun, det_noun, num_noun, rel_agreement, subj_verb
 from cadmus.rules.government import prep_case
 from cadmus.rules.negation import negation
+from cadmus.rules.orthography import spelling
 from cadmus.rules.propn import propn_accent
 from cadmus.rules.typography import typography
 
@@ -278,3 +280,76 @@ def test_num_noun_uses_lexicon_noun_gender():
     s, by_id = sent(words)
     lex = FakeLexicon(noun_genders={"άνδρας": "Masc"})
     assert num_noun(s, by_id, {"lexicon": lex}) == []
+
+
+def _unknown_dict(monkeypatch, kind="nonword", suggestions=()):
+    monkeypatch.setattr(orth_layer, "is_known", lambda t: False)
+    monkeypatch.setattr(orth_layer, "classify_unknown", lambda t: (kind, list(suggestions)))
+
+
+def test_spelling_flags_unknown_word(monkeypatch):
+    _unknown_dict(monkeypatch, suggestions=["σωστή λήψη"])
+    words = [FW(1, "τρισκαίδεκαφωτιά", "NOUN", "Case=Nom|Number=Sing")]
+    s, by_id = sent(words)
+    flags = spelling(s, by_id, {})
+    assert flags and "NONWORD" in flags[0][2]
+
+
+def test_spelling_formlexicon_coverage_suppresses(monkeypatch):
+    _unknown_dict(monkeypatch)
+    words = [FW(1, "βοειδών", "NOUN", "Case=Gen|Number=Plur")]
+    s, by_id = sent(words)
+    assert spelling(s, by_id, {}) != []
+    env = {"lexicon": FormLexicon({"βοειδών": {("NOUN", (("Case", "Gen"),))}})}
+    assert spelling(s, by_id, env) == []
+
+
+def test_spelling_propn_coverage_suppresses(monkeypatch):
+    _unknown_dict(monkeypatch)
+    words = [FW(1, "Χρυσοπηγής", "NOUN", "Case=Gen|Number=Sing")]
+    s, by_id = sent(words)
+    assert spelling(s, by_id, {}) != []
+    env = {"propn": PropnLexicon(["Χρυσοπηγής"])}
+    assert spelling(s, by_id, env) == []
+
+
+def test_spelling_coverage_is_case_insensitive(monkeypatch):
+    _unknown_dict(monkeypatch)
+    words = [FW(1, "Ευρωζώνη", "NOUN", "Case=Nom|Number=Sing")]
+    s, by_id = sent(words)
+    env = {"propn": PropnLexicon(["ευρωζώνη"])}
+    assert spelling(s, by_id, env) == []
+
+
+def test_spelling_abbreviations_and_elisions_skipped(monkeypatch):
+    _unknown_dict(monkeypatch)
+    for text in ("χλμ.", "απ'", "ό,τι", "μ.Χ.", "καθ'"):
+        words = [FW(1, text, "NOUN", "Case=Nom|Number=Sing")]
+        s, by_id = sent(words)
+        assert spelling(s, by_id, {}) == [], text
+
+
+def test_spelling_script_mix_not_suppressed_by_guards(monkeypatch):
+    _unknown_dict(monkeypatch)
+    words = [FW(1, "Kαζάρμα", "NOUN", "Case=Nom|Number=Sing")]
+    s, by_id = sent(words)
+    flags = spelling(s, by_id, {"propn": PropnLexicon(["καζάρμα"])})
+    assert flags and "SCRIPT-MIX" in flags[0][2]
+
+
+def test_spelling_accent_flag_carries_suggestion(monkeypatch):
+    _unknown_dict(monkeypatch, kind="accent", suggestions=["διαβάσω"])
+    words = [FW(1, "διαβασω", "VERB", "Mood=Sub|Number=Sing")]
+    s, by_id = sent(words)
+    flags = spelling(s, by_id, {})
+    assert flags and "ACCENT" in flags[0][2] and flags[0][3] == "διαβάσω"
+
+
+def test_spelling_unaccented_propn_match_still_flagged(monkeypatch):
+    # 'απο' is an unaccented Wikipedia title variant, homographic with the
+    # de-accented form of 'από' — an accent error there must stay flagged.
+    _unknown_dict(monkeypatch)
+    words = [FW(1, "απο", "ADP", "")]
+    s, by_id = sent(words)
+    env = {"propn": PropnLexicon(["απο"])}
+    assert spelling(s, by_id, env) != []

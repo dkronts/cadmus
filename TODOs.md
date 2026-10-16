@@ -177,6 +177,42 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.15 — Spelling precision (lexicon coverage + abbreviation guards)
+
+- [x] `spelling` now consults the per-sentence env lexicons the checker already
+      builds: a token unknown to hunspell is treated as known when its surface
+      form is attested in `FormLexicon.entries` (UD-GDT train) or in
+      `PropnLexicon.forms` (Wikipedia titles + UD PROPNs). PROPN coverage
+      counts **only for accented tokens**: the title dump holds ~5.5k unaccented
+      variants (`απο`, `βορεια`) homographic with de-accented common words, and
+      trusting them cost accent recall (87→60% on the eval pool); restricted,
+      recall is back to baseline and the suppression stays (`Χρυσοπηγής`,
+      `ευρωζώνη`, `ερυθηματώδης` no longer flagged)
+- [x] `spelling` skips abbreviations/elisions/multiword tokens (containing
+      `.`, `,`, `'`/`’` or whitespace): `χλμ.`, `κ.`, `αριθ.`, `απ'`, `ό,τι`
+      were ~50 of the 77 full-test clean-text FPs; corruptions never produce
+      such tokens (typo/accent/homoglyph require a pure-Greek word), so recall
+      is untouched
+- [x] Measured (456-sentence full clean test, end-to-end through the analyzer):
+      spelling FPs **77 → 22 (−71%)**; every other rule's FP count unchanged;
+      injected-error recall unchanged (accent 87%, nonword 96%, script-mix 95%,
+      propn_accent 78%, eval pool seed 42). Model-free unit tests (8) +
+      integration probes (3) added
+- [ ] 0-FP gate on the full 456-sentence clean set — **REJECTED (coverage)**.
+      After the two shipped guards the residue is 22 flags, every one a correct
+      detection of imperfect source text or an uncovered rare word: 7 are
+      genuine typos in the UD-GDT source (`αποτέλεσματα`, `πρέσβειας`,
+      `αντιπροσώποι`, `Βορεία`, `ηλίκια`, `μεσαιωνκής`, `καφκικές`), 7 are
+      archaic/rare forms attested in none of the repo's resources
+      (`συνεκλήθη`, `διαβουλεύθηκε`, `αθετούντο`, `παρέμβω`, `επανεδραιώσει`,
+      `βοειδών`, `κκ`), 4 are compounds (`τουρκοκουρδικό`, `Βορειοκορεάτες`,
+      `κρεατάλευρα`×2), 4 are real Greek/Latin script mixing (`Kαζάρμα`,
+      `Bενετοκρατίας`, `Aθανασίου`, `Dybkjζr`). No surface signal separates
+      these populations from real errors, so suppressing them means deleting
+      ACCENT/NONWORD detection (a recall regression). 0 FP is unreachable for
+      the spelling rule without gutting it; the eval-pool spelling FP count
+      (5/148) lies entirely inside this residue.
+
 ## Later / research
 
 - [ ] Confidence gating + escalation to a local Greek-tuned LLM judge
@@ -251,6 +287,13 @@ ASK USER for any that hit the decision matrix.
         model-free tests for both batch APIs and chunking. Documented two rejected
         rules (proper-noun casing, final -ν) with the precision evidence, and the
         external-resource blockers on the remaining research items.
+- [x] v0.0.15 — spelling precision: unknown tokens attested in the env's
+        `FormLexicon`/`PropnLexicon` (accented tokens for PROPN coverage) are
+        treated as known, and abbreviation/elision tokens (`χλμ.`, `απ'`, `ό,τι`)
+        are skipped; 456-sentence clean sweep spelling FPs 77 → 22 with recall
+        unchanged; the 0-FP gate on the full clean set documented REJECTED
+        (residue = source typos + script mixing + words in no repo resource).
+        89 tests (67 model-free).
 - [x] v0.0.14 — `num_noun`: gendered numerals (`τρεις`/`τρία`, `τέσσερις`/`τέσσερα`)
         must match their noun's gender; decides the numeral's gender from its
         surface form (the tagger repairs `Gender` to agree) and trusts only the

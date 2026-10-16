@@ -48,7 +48,7 @@ contradictions; they never require a full parse to succeed.
 | `copula_pred` | accusative copula predicate (`Είναι γιατρό` → `γιατρός`). The tagger *repairs* the case to nominative, so the rule decides from the surface form: a masculine NOUN predicate ending in `-ο`/`-ους` can never be nominative (a masculine nominative ends in `-ς`). Suppressed when the predicate's gender contradicts its overt subject |
 | `na_form` | a past indicative wrongly used after `να` (`να έκανε` → `να κάνει`). Tagger `Tense` is unreliable, so a UD-GDT verb-form lexicon flags a `να`-governed verb only when its surface form is attested **exclusively** as a past indicative and never after `να` |
 | `prep_case` | prepositional case government (λόγω/εκτός/… + Gen; others + Acc), with fixed-expression exceptions (από κοινού) |
-| `spelling` | non-words, accent/diacritic errors (incl. enclitic double accents), Greek/Latin script mixing — via hunspell `el_GR` (spylls); skips proper-noun spelling and acronyms |
+| `spelling` | non-words, accent/diacritic errors (incl. enclitic double accents), Greek/Latin script mixing — via hunspell `el_GR` (spylls); skips proper-noun spelling, acronyms, abbreviations/elisions (`χλμ.`, `απ'`), and unknown tokens whose surface form is attested in the UD-train form lexicon or (accented tokens only) the PROPN title lexicon |
 | `verb_valence` | unexpected object patterns per verb, from subcategorization frames mined out of UD-GDT; nominative "objects" (postverbal subjects) are exempt |
 | `negation` | δεν/μην selection — subjunctive context detected positionally (να/ας/μήπως), imperative by missing Tense+Mood |
 | `propn_accent` | mis-accented proper nouns (`Ρωσια` → `Ρωσία`, `Παπαδοπουλος` → `Παπαδόπουλος`) against a 169k-form title lexicon mined from Wikipedia + UD-GDT; flags only when the de-accented form maps to a **unique** attested form (ambiguous → silent) |
@@ -71,7 +71,11 @@ suppressed (tagger-error tolerance).
 | typography | 100% |
 
 False positives on clean text: ~7 per 100 sentences (mostly rare-word spelling
-and a handful of tagger artifacts); `typography`, `propn_accent`,
+and a handful of tagger artifacts); on the full 456-sentence clean test set the
+`spelling` rule's FPs dropped 77 → 22 at v0.0.15 (env-lexicon coverage
+suppression + abbreviation/elision guards, recall unchanged — the 22-flag
+residue is correct detection of imperfect source text and script mixing).
+`typography`, `propn_accent`,
 `rel_agreement`, `copula_pred`, `na_form` and `num_noun` fire **zero** false
 positives. Every
 violation carries a `severity` (`low`/`medium`/`high`) so callers can filter style
