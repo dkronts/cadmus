@@ -42,10 +42,10 @@ claims). Every claim in the README must be backed by a measurement in the repo.
 - Perf baselines (**re-measure, don't trust**): model load ~5 s; single
   ~35 ms/sentence; batch ~19 sentences/s.
 
-## The loop — one shippable increment per run
+## The loop — one shippable increment per cycle, repeated until a stop condition
 
 ```
-RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → (next | brainstorm | stop)
+RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → (repeat | brainstorm | stop)
 ```
 
 1. **RECON**: read `TODOs.md` + `METRICS.md` + recent `git log`; run `cadmus
@@ -77,6 +77,13 @@ RECON → SELECT → GATE → IMPLEMENT → VERIFY → SHIP → RECORD → (next
    `TODOs.md` → "Brainstorm — next steps", then keep looping autonomously on
    the candidates that don't hit the decision matrix; **ASK USER** for the
    ones that do. Stop only if brainstorming yields nothing actionable.
+9. **REPEAT**: "next" means re-enter at **RECON**, never at SELECT — every
+   cycle re-measures (eval + diagnose + git log) so selection runs on fresh
+   data, and `METRICS.md`/`TODOs.md` are the only carried-over state. The
+   loop is unbounded: only the STOP conditions (or an ASK USER interrupt)
+   end it. A REJECTED rule is not retried in later cycles unless genuinely
+   new evidence appears (a new lexicon, a different analyzer path); the ≤2
+   refinement bound does not reset across cycles.
 
 ## Testing & stats discipline
 
