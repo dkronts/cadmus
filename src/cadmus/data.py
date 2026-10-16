@@ -25,6 +25,7 @@ RULE_SEVERITY = {
     "typography": "low",
     "det_noun": "medium",
     "adj_noun": "medium",
+    "num_noun": "medium",
     "subj_verb": "high",
     "prep_case": "high",
     "verb_valence": "medium",

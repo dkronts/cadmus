@@ -18,6 +18,7 @@ TARGET_RULES = {
     "negation": {"negation"},
     "typography": {"typography"},
     "rel_agreement": {"rel_agreement"},
+    "num_noun": {"num_noun"},
     # a de-accented proper noun is caught by propn_accent (if stanza keeps it
     # PROPN) or by spelling (if the unaccented form looks like a common word)
     "propn_accent": {"propn_accent", "spelling"},

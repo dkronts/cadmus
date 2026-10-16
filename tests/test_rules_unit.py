@@ -2,7 +2,7 @@ from fakes import FW, FakeLexicon, sent
 
 from cadmus.data import filter_violations
 from cadmus.lexicon import PropnLexicon
-from cadmus.rules.agreement import adj_noun, det_noun, rel_agreement, subj_verb
+from cadmus.rules.agreement import adj_noun, det_noun, num_noun, rel_agreement, subj_verb
 from cadmus.rules.government import prep_case
 from cadmus.rules.negation import negation
 from cadmus.rules.propn import propn_accent
@@ -225,3 +225,56 @@ def test_filter_by_min_severity():
 def test_filter_combined():
     vs = [_v("typography", "low"), _v("det_noun", "medium")]
     assert filter_violations(vs, min_severity="medium", rules=["typography"]) == []
+
+
+def test_num_noun_gender_mismatch_flagged():
+    words = [
+        FW(1, "τρεις", "NUM", "Case=Acc|Gender=Neut|Number=Plur", head=2, deprel="nummod"),
+        FW(2, "παιδιά", "NOUN", "Case=Acc|Gender=Neut|Number=Plur"),
+    ]
+    s, by_id = sent(words)
+    flags = num_noun(s, by_id, {})
+    assert any("Gender" in f[2] for f in flags)
+    assert flags[0][3] == "τρία"
+
+
+def test_num_noun_uses_surface_form_not_tagger_feats():
+    # tagger repaired the numeral's Gender to Neut; the form 'τρεις' is M/F,
+    # so against a neuter noun it must still flag.
+    words = [
+        FW(1, "τρεις", "NUM", "Gender=Neut|Number=Plur", head=2, deprel="nummod"),
+        FW(2, "παιδιά", "NOUN", "Gender=Neut|Number=Plur"),
+    ]
+    s, by_id = sent(words)
+    assert any("Gender" in f[2] for f in num_noun(s, by_id, {}))
+
+
+def test_num_noun_clean_pairs():
+    for num, noun, g in [("τρεις", "άνδρες", "Masc"), ("τρία", "παιδιά", "Neut"),
+                         ("τέσσερις", "γυναίκες", "Fem"), ("τέσσερα", "παιδιά", "Neut")]:
+        words = [
+            FW(1, num, "NUM", f"Gender={g}|Number=Plur", head=2, deprel="nummod"),
+            FW(2, noun, "NOUN", f"Gender={g}|Number=Plur"),
+        ]
+        s, by_id = sent(words)
+        assert num_noun(s, by_id, {}) == [], f"{num} {noun} should be clean"
+
+
+def test_num_noun_ignores_invariable_numerals():
+    words = [
+        FW(1, "δύο", "NUM", "Gender=Neut|Number=Plur", head=2, deprel="nummod"),
+        FW(2, "γυναίκες", "NOUN", "Gender=Fem|Number=Plur"),
+    ]
+    s, by_id = sent(words)
+    assert num_noun(s, by_id, {}) == []
+
+
+def test_num_noun_uses_lexicon_noun_gender():
+    # feats say Neut but the lexicon attests the lemma as Masc -> clean
+    words = [
+        FW(1, "τρεις", "NUM", "Gender=Neut|Number=Plur", head=2, deprel="nummod", lemma="τρεις"),
+        FW(2, "άνδρες", "NOUN", "Gender=Neut|Number=Plur", lemma="άνδρας"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(noun_genders={"άνδρας": "Masc"})
+    assert num_noun(s, by_id, {"lexicon": lex}) == []

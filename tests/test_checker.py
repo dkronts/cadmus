@@ -82,3 +82,13 @@ def test_na_form_flagged(checker):
 
 def test_na_form_clean(checker):
     assert [v for v in checker.check("Θέλω να έρθεις αύριο.") if v.rule == "na_form"] == []
+
+
+def test_num_noun_flagged(checker):
+    assert any(v.rule == "num_noun" for v in checker.check("Τρεις παιδιά φύγαν."))
+    assert any(v.rule == "num_noun" for v in checker.check("Τρία άνδρες φύγαν."))
+
+
+def test_num_noun_clean(checker):
+    assert [v for v in checker.check("Τρεις άνδρες φύγαν.") if v.rule == "num_noun"] == []
+    assert [v for v in checker.check("Τρία παιδιά φύγαν.") if v.rule == "num_noun"] == []

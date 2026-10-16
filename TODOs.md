@@ -57,12 +57,27 @@ Newly surfaced gaps:
 - [ ] Relative pronoun agreement (ο οποίος ↔ antecedent, via `acl:relcl`) —
       shipped in v0.0.8
 - [ ] Clitic rules: clitic doubling, clitic case with ditransitives,
-      clitic position
+       clitic position — **REJECTED (analyzer + precision)**. Three sub-ideas
+       measured and dropped: (1) the tagger tags indirect-object clitics as
+       `obj`, not `iobj` (`Του μίλησα` → `obj`/`Gen`), so the deprel signal the
+       rule needs isn't emitted; (2) a valence-free `iobj`+Acc invariant is 0 FP
+       on clean test but 3 FP on train gold and never fires on analyzer output;
+       (3) a per-verb clitic-case lexicon is coverage-limited (2 FP on clean test
+       from unseen verbs) and Greek verbs legitimately license several clitic
+       cases, so the closed-set invariant doesn't hold. No safe offline rule.
 - [x] να + dependent verb form checks — shipped in v0.0.12 as `na_form`. The
       tagger assigns `Tense` inconsistently, so the rule classifies by *surface
       form* against a UD-GDT verb-form lexicon: flags a `να`-governed verb only
       when its form is attested exclusively as a finite past indicative and never
       after `να`. 0 FP on clean text; recall bounded by treebank coverage.
+- [x] Numeral/noun gender agreement — shipped in v0.0.14 as `num_noun`. The
+       tagger *repairs* a numeral's `Gender` to match its noun (`τρεις παιδιά` →
+       `Gender=Neut`), so the rule reads the numeral's gender from its **surface
+       form** (`τρεις`/`τέσσερις` → M/F, `τρία`/`τέσσερα` → N) and only trusts the
+       noun's gender (via the same lemma-attestation resolver as `adj_noun`).
+       0 FP on clean text (148 eval + 456 full test, via the analyzer). Recall
+       not in the corruption pool (no gendered numeral in the 4–15-token pool),
+       so it is validated by targeted integration tests, like `rel_agreement`.
 - [ ] Numeral/noun agreement quirks (δύο + plural verb etc.)
 - [ ] Adjective position classes (attributive vs predicative)
 
@@ -225,7 +240,14 @@ Newly surfaced gaps:
        `VerbForms` UD-GDT lexicon). Both 0 FP on clean text; model-free unit
        tests + integration tests.
 - [x] v0.0.13 — batch mode: `check_batch` (batched pipeline via `pipe`/
-       `process_many`/fallback) + `cadmus batch` CLI for one-text-per-line input;
-       model-free tests for both batch APIs and chunking. Documented two rejected
-       rules (proper-noun casing, final -ν) with the precision evidence, and the
-       external-resource blockers on the remaining research items.
+        `process_many`/fallback) + `cadmus batch` CLI for one-text-per-line input;
+        model-free tests for both batch APIs and chunking. Documented two rejected
+        rules (proper-noun casing, final -ν) with the precision evidence, and the
+        external-resource blockers on the remaining research items.
+- [x] v0.0.14 — `num_noun`: gendered numerals (`τρεις`/`τρία`, `τέσσερις`/`τέσσερα`)
+        must match their noun's gender; decides the numeral's gender from its
+        surface form (the tagger repairs `Gender` to agree) and trusts only the
+        noun's gender via the `adj_noun` lemma-attestation resolver. Dampenable,
+        0 FP on clean text (148 eval + 456 full test), model-free unit tests +
+        integration tests. Documented the clitic-rule rejection (analyzer tags
+        indirect clitics as `obj`; per-verb case lexicon is coverage-limited).

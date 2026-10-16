@@ -126,9 +126,26 @@ def corrupt_rel_agreement(text, rng):
     return text[:pos] + rep + text[pos + len(word):], "rel_agreement"
 
 
+# Gendered numeral forms: flipping gender breaks NUM-NOUN agreement (the numeral
+# agreed with its noun in the source, so any gender change is now wrong).
+NUM_FLIP = {"τρεις": "τρία", "τρία": "τρεις", "τέσσερις": "τέσσερα", "τέσσερα": "τέσσερις"}
+
+
+def corrupt_num_noun(text, rng):
+    cands = [(m.start(), m.group()) for m in re.finditer(r"[Α-Ωα-ωά-ώ]+", text)
+             if m.group().lower() in NUM_FLIP]
+    if not cands:
+        return None
+    pos, word = rng.choice(cands)
+    rep = NUM_FLIP[word.lower()]
+    if word[0].isupper():
+        rep = rep.capitalize()
+    return text[:pos] + rep + text[pos + len(word):], "num_noun"
+
+
 ALL = [corrupt_det, corrupt_typo, corrupt_accent, corrupt_homoglyph,
        corrupt_negation, corrupt_question_mark, corrupt_spacing, corrupt_propn_accent,
-       corrupt_rel_agreement]
+       corrupt_rel_agreement, corrupt_num_noun]
 
 
 def corrupt(text, rng):

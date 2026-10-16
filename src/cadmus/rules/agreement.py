@@ -4,8 +4,25 @@ from ..data import (
     DEFINITE_ARTICLES, HETEREOCLITE_PLURALS, conj_closure, feats,
     has_own_determiner,
 )
+from ..orthography import strip_accents
 
 AGREEMENT_FEATURES = ("Gender", "Case", "Number")
+
+# Gendered, agreeing numeral forms (nom/acc of 3 and 4), keyed by de-accented
+# lowercase form. The tagger *repairs* a numeral's Gender to match its noun, so
+# the numeral's true gender comes from its surface form, not its feats.
+NUM_GENDER = {
+    "τρεις": {"Masc", "Fem"},
+    "τεσσερις": {"Masc", "Fem"},
+    "τρια": {"Neut"},
+    "τεσσερα": {"Neut"},
+}
+NUM_CORRECT = {
+    "τρεις": {"Neut": "τρία"},
+    "τεσσερις": {"Neut": "τέσσερα"},
+    "τρια": {"Masc": "τρεις", "Fem": "τρεις"},
+    "τεσσερα": {"Masc": "τέσσερις", "Fem": "τέσσερις"},
+}
 
 
 def _effective_gender(word, feats, env):
@@ -76,6 +93,32 @@ def adj_noun(sent, by_id, env):
             noun_val = noun_gender if k == "Gender" else hf.get(k)
             if k in f and noun_val is not None and f[k] != noun_val:
                 out.append((w, h, f"ADJ-NOUN {k}: '{w.text}'[{f[k]}] vs '{h.text}'[{noun_val}]"))
+    return out
+
+
+def num_noun(sent, by_id, env):
+    """A gendered numeral (τρεις/τρία, τέσσερις/τέσσερα) must match its noun's gender.
+
+    The tagger repairs the numeral's Gender to agree, so the numeral's true
+    gender is read from its surface form; only the noun's gender is trusted.
+    """
+    out = []
+    for w in sent.words:
+        if w.upos != "NUM" or w.deprel != "nummod":
+            continue
+        key = strip_accents(w.text.lower())
+        allowed = NUM_GENDER.get(key)
+        if not allowed:
+            continue
+        h = by_id.get(w.head)
+        if not h or h.upos not in ("NOUN", "PROPN"):
+            continue
+        noun_gender = _effective_gender(h, feats(h), env)
+        if noun_gender and noun_gender not in allowed:
+            sug = NUM_CORRECT.get(key, {}).get(noun_gender)
+            msg = (f"NUM-NOUN Gender: '{w.text}' (only {'/'.join(sorted(allowed))}) "
+                   f"vs noun '{h.text}'[{noun_gender}]")
+            out.append((w, h, msg, sug) if sug else (w, h, msg))
     return out
 
 

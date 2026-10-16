@@ -42,6 +42,7 @@ contradictions; they never require a full parse to succeed.
 |---|---|
 | `det_noun` | article–noun agreement; article gender taken from a treebank paradigm table (resists the tagger "repairing" corrupted input), noun gender from lemma attestations; heteroclite-plural exceptions (τα πλευρά); emits the corrected article as a suggestion |
 | `adj_noun` | adjective–noun agreement (only when cases match — case mismatches indicate parse artifacts) |
+| `num_noun` | gendered numeral–noun agreement (`τρεις παιδιά` → `τρία παιδιά`). The tagger *repairs* the numeral's gender to match the noun, so the numeral's gender is read from its surface form (`τρεις`/`τέσσερις` → M/F, `τρία`/`τέσσερα` → N) and only the noun's gender is trusted (lemma attestations, as in `adj_noun`) |
 | `subj_verb` | subject–verb number and person, with coordination-aware number licensing |
 | `rel_agreement` | `ο οποίος` ↔ antecedent Gender+Number agreement (Case is free — it comes from the relative clause); the antecedent is located by walking the head chain to the nearest `acl:relcl` verb, so pronouns inside a prepositional phrase (`σύμφωνα με την οποία`) resolve too |
 | `copula_pred` | accusative copula predicate (`Είναι γιατρό` → `γιατρός`). The tagger *repairs* the case to nominative, so the rule decides from the surface form: a masculine NOUN predicate ending in `-ο`/`-ους` can never be nominative (a masculine nominative ends in `-ς`). Suppressed when the predicate's gender contradicts its overt subject |
@@ -71,14 +72,15 @@ suppressed (tagger-error tolerance).
 
 False positives on clean text: ~7 per 100 sentences (mostly rare-word spelling
 and a handful of tagger artifacts); `typography`, `propn_accent`,
-`rel_agreement`, `copula_pred` and `na_form` fire **zero** false positives. Every
+`rel_agreement`, `copula_pred`, `na_form` and `num_noun` fire **zero** false
+positives. Every
 violation carries a `severity` (`low`/`medium`/`high`) so callers can filter style
 nits from hard errors.
 
-`rel_agreement` is validated by targeted tests rather than the corruption table
-above: the eval pool is filtered to short (4–15 token) sentences, which excludes
-nearly every relative clause, so the injected-error harness has no relative-clause
-samples to score yet.
+`rel_agreement` and `num_noun` are validated by targeted tests rather than the
+corruption table above: the eval pool is filtered to short (4–15 token)
+sentences, which excludes nearly every relative clause and gendered numeral, so
+the injected-error harness has no samples to score yet.
 
 The proper-noun lexicon is mined from the Greek Wikipedia title dump plus every
 `PROPN` surface form in UD-GDT (~169k forms, cached under `~/.cache/cadmus`).

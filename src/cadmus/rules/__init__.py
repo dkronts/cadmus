@@ -1,4 +1,4 @@
-from .agreement import adj_noun, det_noun, rel_agreement, subj_verb
+from .agreement import adj_noun, det_noun, num_noun, rel_agreement, subj_verb
 from .government import prep_case
 from .morphology import copula_pred, na_form
 from .negation import negation
@@ -9,6 +9,7 @@ from .valence import verb_valence
 RULES = {
     "det_noun": det_noun,
     "adj_noun": adj_noun,
+    "num_noun": num_noun,
     "subj_verb": subj_verb,
     "rel_agreement": rel_agreement,
     "copula_pred": copula_pred,
@@ -20,6 +21,6 @@ RULES = {
     "propn_accent": propn_accent,
 }
 
-DAMPENABLE = {"det_noun", "adj_noun", "subj_verb", "rel_agreement", "prep_case", "verb_valence", "negation"}
+DAMPENABLE = {"det_noun", "adj_noun", "num_noun", "subj_verb", "rel_agreement", "prep_case", "verb_valence", "negation"}
 
 __all__ = ["RULES", "DAMPENABLE"]
