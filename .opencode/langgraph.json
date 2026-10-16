@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "preset": "solution-lod",
+  "options": {
+    "roleLimits": {
+      "inspect": { "maxTurns": 24, "maxContextTokens": 120000 },
+      "implement": { "maxTurns": 48, "maxContextTokens": 200000 },
+      "verify": { "maxTurns": 32, "maxContextTokens": 160000 }
+    }
+  }
+}
