@@ -91,6 +91,12 @@ class CadmusChecker:
                     )
         return violations
 
+    def diagnose(self, text):
+        """Report analyzer feature coverage over `text` (why rules may stay silent)."""
+        from .diagnostics import coverage_report
+
+        return coverage_report(self.nlp(text).sentences)
+
     def _dampened(self, w, h, rule=None):
         lex = self.lexicon()
         if lex is None:

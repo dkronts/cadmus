@@ -49,11 +49,19 @@ Newly surfaced gaps:
       Mood/VerbForm features + positional να-context)
 - [ ] Copula predicate case (nominative predicate: "είμαι ράφτης";
       accusative object predicate: "τον έκαναν πρόεδρο")
-- [x] Relative pronoun agreement (ο οποίος ↔ antecedent, via `acl:relcl`) —
+      **BLOCKED**: the Greek POS model *repairs* case — "Είναι γιατρό" is
+      re-tagged `Case=Nom`, so the accusative error is invisible to any
+      feats-based rule. Needs a surface-form case check (declension table),
+      not tagger feats.
+- [ ] Relative pronoun agreement (ο οποίος ↔ antecedent, via `acl:relcl`) —
       shipped in v0.0.8
 - [ ] Clitic rules: clitic doubling, clitic case with ditransitives,
       clitic position
 - [ ] να + dependent verb form checks
+      **BLOCKED**: stanza emits no `Mood=Sub` and assigns `Tense` inconsistently
+      (the wrong "να πήγες" sometimes loses `Tense=Past`), so a feats rule misses
+      the error. 0 FP but unreliable recall — needs a verb-form surface lexicon
+      (which inflections are legal after να) rather than tagger feats.
 - [ ] Numeral/noun agreement quirks (δύο + plural verb etc.)
 - [ ] Adjective position classes (attributive vs predicative)
 
@@ -146,8 +154,9 @@ Newly surfaced gaps:
 - [ ] Error corpus from real quantized-MoE outputs (collect + annotate;
       calibrate the corruption taxonomy against it)
 - [ ] LanguageTool Greek baseline comparison on the same eval set
-- [ ] Diagnostics mode: report tagger feats coverage gaps (missing
-      Gender/Case on tokens) per document
+- [x] Diagnostics mode: `cadmus diagnose` reports, per UPOS, how often each
+      expected feature (Gender/Case/Number/Tense/Person) is present, flagging
+      low-coverage features where rules will under-fire (shipped in v0.0.11)
 - [ ] WordNet/selectional preferences (only if semantics rules ever
       become tractable)
 
@@ -181,3 +190,8 @@ Newly surfaced gaps:
 - [x] v0.0.10 — `watch` mode: live-gate a stream of texts (one per line) from
       stdin or a file; silent on clean lines, `--json`/`--severity`/`--rules`.
       Pure `stream.iter_checked` helper (injected checker), model-free CI test.
+- [x] v0.0.11 — `diagnose` mode: per-UPOS feature-coverage report (where the
+      tagger omits Gender/Case/Tense), via a model-free `diagnostics` module.
+      Documented two analyzer-imposed blockers: copula-predicate case and
+      να-verb-form rules can't use tagger feats (the model repairs case and
+      assigns Tense inconsistently) — they need surface-form morphology.

@@ -57,6 +57,9 @@ def main(argv=None):
     p_watch.add_argument("--rules", metavar="R1,R2",
                          help="comma-separated rule ids to report")
 
+    p_diag = sub.add_parser("diagnose", help="report analyzer feature coverage (why rules stay silent)")
+    p_diag.add_argument("path", nargs="?", help="text file (UTF-8); omit to read stdin")
+
     args = p.parse_args(argv)
     checker = CadmusChecker()
 
@@ -104,6 +107,11 @@ def main(argv=None):
                 for v in vs:
                     extra = f"  → {v.suggestion}" if v.suggestion else ""
                     print(f"[{v.rule}/{v.severity}] {v.message}{extra}  :: {text}", flush=True)
+        return 0
+
+    if args.cmd == "diagnose":
+        text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
+        print(checker.diagnose(text))
         return 0
 
     text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()

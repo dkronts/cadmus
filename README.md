@@ -133,6 +133,17 @@ cadmus watch responses.jsonl --json               # one JSON verdict per record
 cadmus watch responses.jsonl --severity medium    # ignore style nits
 ```
 
+### Diagnostics
+
+Rules can only fire on features the tagger emits. `cadmus diagnose` reports how
+much morphology the analyzer actually exposes, flagging low-coverage features
+(where a rule will silently under-fire):
+
+```bash
+cadmus diagnose corpus.txt
+# VERB  Tense   50.0% present (1/2)  <-- low: rules on this feature will under-fire
+```
+
 ### Data factory
 
 Every injected error is a labelled training pair. `cadmus export` mines the
