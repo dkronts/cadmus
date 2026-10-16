@@ -44,6 +44,8 @@ contradictions; they never require a full parse to succeed.
 | `adj_noun` | adjective–noun agreement (only when cases match — case mismatches indicate parse artifacts) |
 | `subj_verb` | subject–verb number and person, with coordination-aware number licensing |
 | `rel_agreement` | `ο οποίος` ↔ antecedent Gender+Number agreement (Case is free — it comes from the relative clause); the antecedent is located by walking the head chain to the nearest `acl:relcl` verb, so pronouns inside a prepositional phrase (`σύμφωνα με την οποία`) resolve too |
+| `copula_pred` | accusative copula predicate (`Είναι γιατρό` → `γιατρός`). The tagger *repairs* the case to nominative, so the rule decides from the surface form: a masculine NOUN predicate ending in `-ο`/`-ους` can never be nominative (a masculine nominative ends in `-ς`). Suppressed when the predicate's gender contradicts its overt subject |
+| `na_form` | a past indicative wrongly used after `να` (`να έκανε` → `να κάνει`). Tagger `Tense` is unreliable, so a UD-GDT verb-form lexicon flags a `να`-governed verb only when its surface form is attested **exclusively** as a past indicative and never after `να` |
 | `prep_case` | prepositional case government (λόγω/εκτός/… + Gen; others + Acc), with fixed-expression exceptions (από κοινού) |
 | `spelling` | non-words, accent/diacritic errors (incl. enclitic double accents), Greek/Latin script mixing — via hunspell `el_GR` (spylls); skips proper-noun spelling and acronyms |
 | `verb_valence` | unexpected object patterns per verb, from subcategorization frames mined out of UD-GDT; nominative "objects" (postverbal subjects) are exempt |
@@ -68,10 +70,10 @@ suppressed (tagger-error tolerance).
 | typography | 100% |
 
 False positives on clean text: ~7 per 100 sentences (mostly rare-word spelling
-and a handful of tagger artifacts); `typography`, `propn_accent` and
-`rel_agreement` fire **zero** false positives. Every violation carries a
-`severity` (`low`/`medium`/`high`) so callers can filter style nits from hard
-errors.
+and a handful of tagger artifacts); `typography`, `propn_accent`,
+`rel_agreement`, `copula_pred` and `na_form` fire **zero** false positives. Every
+violation carries a `severity` (`low`/`medium`/`high`) so callers can filter style
+nits from hard errors.
 
 `rel_agreement` is validated by targeted tests rather than the corruption table
 above: the eval pool is filtered to short (4–15 token) sentences, which excludes

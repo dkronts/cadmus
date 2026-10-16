@@ -145,6 +145,78 @@ class FormLexicon:
                 return False
         return True
 
+    def nominal_cases(self, form):
+        """Set of Case values a surface form is attested with as NOUN/ADJ/PROPN.
+
+        Surface-form based, so it is immune to the tagger *repairing* a wrong
+        case to nominative. Empty when the form is unseen (precision-first)."""
+        cases = set()
+        for upos, pairs in self.entries.get(form.lower(), ()):
+            if upos in ("NOUN", "ADJ", "PROPN"):
+                case = dict(pairs).get("Case")
+                if case:
+                    cases.add(case)
+        return cases
+
+
+class VerbForms:
+    """Surface-form verb classes from UD-GDT, used to detect a past indicative
+    wrongly used after να.
+
+    The tagger assigns Tense inconsistently at inference, so we classify by the
+    *surface form* instead: a form is illegal after να only if it is attested
+    exclusively as a finite past indicative and never as a να-governed verb."""
+
+    ASSET = "verbforms.v1.json"
+
+    def __init__(self, past_indicative, legal_after_na):
+        self.past_indicative = set(past_indicative)
+        self.legal_after_na = set(legal_after_na)
+
+    @classmethod
+    def build(cls, conllu_path):
+        past, legal = set(), set()
+        for block in iter_conllu_sentences(conllu_path):
+            rows = []
+            for line in block:
+                if line.startswith("#") or "\t" not in line:
+                    continue
+                c = line.split("\t")
+                if "-" in c[0] or "." in c[0]:
+                    continue
+                rows.append(c)
+            for c in rows:
+                if c[3] not in ("VERB", "AUX"):
+                    continue
+                form = c[1].lower()
+                f = _parse_feats(c[5])
+                if f.get("VerbForm") == "Fin" and f.get("Tense") == "Past":
+                    past.add(form)
+                if any(r[6] == c[0] and r[1] == "να" and r[7] == "aux" for r in rows):
+                    legal.add(form)
+        return cls(past, legal)
+
+    @classmethod
+    def load(cls):
+        path = CACHE_DIR / cls.ASSET
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return cls(data["past_indicative"], data["legal_after_na"])
+        ensure_asset("el_gdt-ud-train.conllu")
+        lex = cls.build(ensure_asset("el_gdt-ud-train.conllu"))
+        path.write_text(
+            json.dumps({"past_indicative": sorted(lex.past_indicative),
+                        "legal_after_na": sorted(lex.legal_after_na)},
+                       ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return lex
+
+    def illegal_after_na(self, form):
+        f = form.lower()
+        return f in self.past_indicative and f not in self.legal_after_na
+
+
 def _word_feats(word):
     f = word.feats or ""
     return dict(kv.split("=", 1) for kv in f.split("|") if "=" in kv)

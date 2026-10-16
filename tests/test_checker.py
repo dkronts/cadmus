@@ -59,3 +59,26 @@ def test_rel_agreement_flagged(checker):
                for v in checker.check("Ο γιατρός η οποία πραγματοποίησε την έκτρωση φεύγει."))
     assert any(v.rule == "rel_agreement"
                for v in checker.check("Οι γιατροί τα οποία πραγματοποίησαν την έκτρωση φεύγουν."))
+
+
+def test_copula_pred_flagged(checker):
+    assert any(v.rule == "copula_pred" for v in checker.check("Είναι γιατρό."))
+    assert any(v.rule == "copula_pred" for v in checker.check("Θα γίνεις πρόεδρο."))
+
+
+def test_copula_pred_clean(checker):
+    assert [v for v in checker.check("Είναι γιατρός.") if v.rule == "copula_pred"] == []
+
+
+def test_copula_pred_subject_guard(checker):
+    # neuter predicate mis-tagged masculine; subject is neuter -> suppressed
+    assert [v for v in checker.check("Υπαίτιο για αυτό είναι το Κοινοβούλιο.")
+            if v.rule == "copula_pred"] == []
+
+
+def test_na_form_flagged(checker):
+    assert any(v.rule == "na_form" for v in checker.check("Νομίζω ότι να έκανε λάθος."))
+
+
+def test_na_form_clean(checker):
+    assert [v for v in checker.check("Θέλω να έρθεις αύριο.") if v.rule == "na_form"] == []

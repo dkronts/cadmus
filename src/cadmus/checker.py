@@ -40,6 +40,7 @@ class CadmusChecker:
         self.use_lexicon = use_lexicon
         self._lexicon = None
         self._propn = None
+        self._verbforms = None
         self._damp_stats = {"suppressed": 0, "fired": 0}
 
     def lexicon(self):
@@ -60,6 +61,16 @@ class CadmusChecker:
                 self._propn = False
         return self._propn or None
 
+    def verbforms(self):
+        if self._verbforms is None:
+            try:
+                from .lexicon import VerbForms
+
+                self._verbforms = VerbForms.load()
+            except Exception:
+                self._verbforms = False
+        return self._verbforms or None
+
     def check(self, text):
         doc = self.nlp(text)
         violations = []
@@ -77,6 +88,7 @@ class CadmusChecker:
             if self.use_lexicon:
                 env["lexicon"] = self.lexicon()
             env["propn"] = self.propn()
+            env["verbforms"] = self.verbforms()
             for name, fn in RULES.items():
                 for flag in fn(sent, by_id, env):
                     w, h, msg = flag[0], flag[1], flag[2]

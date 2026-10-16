@@ -1,5 +1,6 @@
 from .agreement import adj_noun, det_noun, rel_agreement, subj_verb
 from .government import prep_case
+from .morphology import copula_pred, na_form
 from .negation import negation
 from .orthography import spelling
 from .propn import propn_accent
@@ -10,6 +11,8 @@ RULES = {
     "adj_noun": adj_noun,
     "subj_verb": subj_verb,
     "rel_agreement": rel_agreement,
+    "copula_pred": copula_pred,
+    "na_form": na_form,
     "prep_case": prep_case,
     "spelling": spelling,
     "verb_valence": verb_valence,

@@ -47,21 +47,22 @@ Newly surfaced gaps:
       indirect object, wrong-case object (genitive objects)
 - [x] δε(ν)/μη(ν) selection (indicative vs subjunctive/imperative, from
       Mood/VerbForm features + positional να-context)
-- [ ] Copula predicate case (nominative predicate: "είμαι ράφτης";
-      accusative object predicate: "τον έκαναν πρόεδρο")
-      **BLOCKED**: the Greek POS model *repairs* case — "Είναι γιατρό" is
-      re-tagged `Case=Nom`, so the accusative error is invisible to any
-      feats-based rule. Needs a surface-form case check (declension table),
-      not tagger feats.
+- [x] Copula predicate case (nominative predicate: "είμαι ράφτης") — shipped
+      in v0.0.12 as `copula_pred`. The tagger *repairs* case ("Είναι γιατρό" →
+      `Case=Nom`), so the rule ignores tagger Case and instead flags a masculine
+      NOUN predicate whose surface form ends in -ο/-ους (a masculine nominative
+      always ends in -ς). Suppressed when the predicate's gender contradicts its
+      overt subject (guards mis-tagged predicate adjectives). 0 FP on clean text;
+      recall limited to masculine nouns (fem/neuter nom=acc syncretism is unsafe).
 - [ ] Relative pronoun agreement (ο οποίος ↔ antecedent, via `acl:relcl`) —
       shipped in v0.0.8
 - [ ] Clitic rules: clitic doubling, clitic case with ditransitives,
       clitic position
-- [ ] να + dependent verb form checks
-      **BLOCKED**: stanza emits no `Mood=Sub` and assigns `Tense` inconsistently
-      (the wrong "να πήγες" sometimes loses `Tense=Past`), so a feats rule misses
-      the error. 0 FP but unreliable recall — needs a verb-form surface lexicon
-      (which inflections are legal after να) rather than tagger feats.
+- [x] να + dependent verb form checks — shipped in v0.0.12 as `na_form`. The
+      tagger assigns `Tense` inconsistently, so the rule classifies by *surface
+      form* against a UD-GDT verb-form lexicon: flags a `να`-governed verb only
+      when its form is attested exclusively as a finite past indicative and never
+      after `να`. 0 FP on clean text; recall bounded by treebank coverage.
 - [ ] Numeral/noun agreement quirks (δύο + plural verb etc.)
 - [ ] Adjective position classes (attributive vs predicative)
 
@@ -192,6 +193,13 @@ Newly surfaced gaps:
       Pure `stream.iter_checked` helper (injected checker), model-free CI test.
 - [x] v0.0.11 — `diagnose` mode: per-UPOS feature-coverage report (where the
       tagger omits Gender/Case/Tense), via a model-free `diagnostics` module.
-      Documented two analyzer-imposed blockers: copula-predicate case and
-      να-verb-form rules can't use tagger feats (the model repairs case and
-      assigns Tense inconsistently) — they need surface-form morphology.
+       Documented two analyzer-imposed blockers: copula-predicate case and
+       να-verb-form rules can't use tagger feats (the model repairs case and
+       assigns Tense inconsistently) — they need surface-form morphology.
+- [x] v0.0.12 — `copula_pred` + `na_form`, the two rules that bypass the tagger's
+       case/tense repair by deciding from surface forms: `copula_pred` flags a
+       masculine NOUN copula predicate ending in -ο/-ους (never nominative),
+       suppressed on subject-gender conflict; `na_form` flags a `να`-governed
+       verb whose surface form is attested only as a past indicative (new
+       `VerbForms` UD-GDT lexicon). Both 0 FP on clean text; model-free unit
+       tests + integration tests.
