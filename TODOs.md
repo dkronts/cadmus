@@ -49,7 +49,8 @@ Newly surfaced gaps:
       Mood/VerbForm features + positional να-context)
 - [ ] Copula predicate case (nominative predicate: "είμαι ράφτης";
       accusative object predicate: "τον έκαναν πρόεδρο")
-- [ ] Relative pronoun agreement (ο οποίος ↔ antecedent, via `acl`)
+- [x] Relative pronoun agreement (ο οποίος ↔ antecedent, via `acl:relcl`) —
+      shipped in v0.0.8
 - [ ] Clitic rules: clitic doubling, clitic case with ditransitives,
       clitic position
 - [ ] να + dependent verb form checks
@@ -104,7 +105,22 @@ Newly surfaced gaps:
 - [ ] `--with-check` to attach the checker's own detection + suggestion per pair
 - [ ] richer targets: multi-error sentences, sentence-pair (context) examples
 
-## v0.0.8 — Streaming & batch
+## v0.0.8 — Relative-pronoun agreement
+
+- [x] `rel_agreement` rule: `ο οποίος` (and its inflected forms) must agree with
+      its antecedent in **Gender + Number**; Case is free (it comes from the
+      relative clause). The antecedent is found by walking the head chain up to
+      the nearest `acl:relcl` verb and taking that verb's head — this also
+      resolves pronouns buried in a prepositional phrase (`σύμφωνα με την οποία`)
+- [x] Antecedent restricted to `NOUN`/`PROPN`; the rule is dampenable, so
+      tagger-suspect tokens are suppressed. **0 FP** on clean UD-GDT text
+- [x] Model-free unit tests (fake trees, incl. the PP walk-up path) + stanza
+      integration tests (correct vs. wrong-gender relative clauses)
+- [ ] Eval recall not yet measured: the corruption pool is filtered to 4–15
+      tokens, which excludes almost every relative clause, so `corrupt_rel_agreement`
+      has no samples. Needs a longer-sentence pool or a dedicated relcl sub-corpus
+
+## v0.0.9 — Streaming & batch
 
 - [ ] Batch mode (stanza batch processing) for whole documents
 - [ ] `watch` mode: read a growing file / named pipe — for live-gating
@@ -143,3 +159,6 @@ Newly surfaced gaps:
 - [x] v0.0.7 — data-factory export: `cadmus export` emits aligned
       (broken → correct) pairs from UD-GDT, labelled by error type with a
       localized diff span (`jsonl`/`json`); model-free and CI-tested.
+- [x] v0.0.8 — `rel_agreement`: `ο οποίος` ↔ antecedent Gender+Number agreement
+      via the `acl:relcl` head chain (resolves PP-nested pronouns too);
+      dampenable, 0 FP on clean text, model-free + integration tests.

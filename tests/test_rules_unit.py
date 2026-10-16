@@ -2,7 +2,7 @@ from fakes import FW, FakeLexicon, sent
 
 from cadmus.data import filter_violations
 from cadmus.lexicon import PropnLexicon
-from cadmus.rules.agreement import adj_noun, det_noun, subj_verb
+from cadmus.rules.agreement import adj_noun, det_noun, rel_agreement, subj_verb
 from cadmus.rules.government import prep_case
 from cadmus.rules.negation import negation
 from cadmus.rules.propn import propn_accent
@@ -73,6 +73,62 @@ def test_subj_verb_plural_with_single_subject_flagged():
     ]
     s, by_id = sent(words)
     assert any("Number" in f[2] for f in subj_verb(s, by_id, {}))
+
+
+def _relcl(ant_feats, rel_feats, rel_lemma="οποίος"):
+    # antecedent (root) <- acl:relcl verb <- relative pronoun (nsubj)
+    return [
+        FW(1, "γιατρός", "NOUN", ant_feats, head=0, deprel="root"),
+        FW(2, "παρακολουθεί", "VERB", "Number=Sing", head=1, deprel="acl:relcl"),
+        FW(3, rel_lemma, "PRON", rel_feats, head=2, deprel="nsubj"),
+    ]
+
+
+def test_rel_agreement_clean():
+    words = _relcl("Case=Nom|Gender=Masc|Number=Sing",
+                   "Case=Nom|Gender=Masc|Number=Sing|PronType=Rel")
+    assert rel_agreement(*sent(words), {}) == []
+
+
+def test_rel_agreement_gender_mismatch():
+    words = _relcl("Case=Nom|Gender=Masc|Number=Sing",
+                   "Case=Nom|Gender=Fem|Number=Sing|PronType=Rel")
+    assert any("Gender" in f[2] for f in rel_agreement(*sent(words), {}))
+
+
+def test_rel_agreement_number_mismatch():
+    words = _relcl("Case=Nom|Gender=Masc|Number=Sing",
+                   "Case=Nom|Gender=Masc|Number=Plur|PronType=Rel")
+    assert any("Number" in f[2] for f in rel_agreement(*sent(words), {}))
+
+
+def test_rel_agreement_case_is_free():
+    # relative pronoun takes its case from the clause; only Gender/Number checked
+    words = _relcl("Case=Nom|Gender=Fem|Number=Plur",
+                   "Case=Gen|Gender=Fem|Number=Plur|PronType=Rel")
+    assert rel_agreement(*sent(words), {}) == []
+
+
+def test_rel_agreement_resolves_through_pp():
+    # pronoun governed by an adverb inside the clause; antecedent is the relcl head
+    words = [
+        FW(1, "πρόταση", "NOUN", "Case=Nom|Gender=Fem|Number=Sing", head=4, deprel="nsubj"),
+        FW(2, "σύμφωνα", "ADV", head=4, deprel="advmod"),
+        FW(3, "οποία", "PRON", "Case=Acc|Gender=Masc|Number=Sing|PronType=Rel", head=2, deprel="obl", lemma="οποίος"),
+        FW(4, "έγινε", "VERB", "Number=Sing", head=0, deprel="root"),
+        FW(5, "δεχτεί", "VERB", head=1, deprel="acl:relcl"),
+    ]
+    # pronoun (3) -> adverb (2) -> relcl verb (5) -> antecedent (1); walk-up finds it
+    words[2].head = 5
+    words[1].head = 5
+    s, by_id = sent(words)
+    assert any("Gender" in f[2] for f in rel_agreement(s, by_id, {}))
+
+
+def test_rel_agreement_ignores_non_relative():
+    words = _relcl("Case=Nom|Gender=Masc|Number=Sing",
+                   "Case=Nom|Gender=Fem|Number=Sing", rel_lemma="αυτός")
+    assert rel_agreement(*sent(words), {}) == []
 
 
 def test_prep_case_gen_governing():

@@ -97,3 +97,41 @@ def subj_verb(sent, by_id, env):
         if hf.get("Person") in ("1", "2") and w.upos != "PRON":
             out.append((w, h, f"SUBJ-VERB Person: verb '{h.text}' is {hf['Person']}p but subject '{w.text}' is not a pronoun"))
     return out
+
+
+def _relcl_ancestor(w, by_id):
+    """Nearest ancestor (or self) heading an acl:relcl clause, else None."""
+    seen = set()
+    cur = w
+    while cur is not None and cur.id not in seen:
+        seen.add(cur.id)
+        if cur.deprel == "acl:relcl":
+            return cur
+        if cur.head == 0:
+            return None
+        cur = by_id.get(cur.head)
+    return None
+
+
+def rel_agreement(sent, by_id, env):
+    """'ο οποίος' must agree with its antecedent in Gender+Number (Case is free)."""
+    out = []
+    for w in sent.words:
+        f = feats(w)
+        if f.get("PronType") != "Rel" or (w.lemma or "").lower() != "οποίος":
+            continue
+        relcl = _relcl_ancestor(w, by_id)
+        if not relcl:
+            continue
+        ant = by_id.get(relcl.head)
+        if not ant or ant.upos not in ("NOUN", "PROPN"):
+            continue
+        af = feats(ant)
+        ant_gender = _effective_gender(ant, af, env)
+        for k in ("Gender", "Number"):
+            wv = f.get(k)
+            av = ant_gender if k == "Gender" else af.get(k)
+            if wv and av and wv != av:
+                out.append((w, ant,
+                            f"REL-ANT {k}: relative pronoun '{w.text}'[{wv}] vs antecedent '{ant.text}'[{av}]"))
+    return out

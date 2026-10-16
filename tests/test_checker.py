@@ -45,3 +45,17 @@ def test_accent_carries_suggestion(checker):
 def test_propn_accent_end_to_end(checker):
     vs = [v for v in checker.check("Ταξίδεψα στη Ρωσια.") if v.suggestion == "Ρωσία"]
     assert vs, "expected a proper-noun accent correction for 'Ρωσια'"
+
+
+def test_rel_agreement_clean(checker):
+    assert [v for v in checker.check("Ο γιατρός ο οποίος πραγματοποίησε την έκτρωση φεύγει.")
+            if v.rule == "rel_agreement"] == []
+    assert [v for v in checker.check("Η ομάδα η οποία θεωρεί τις εγγυήσεις σημαντικές κέρδισε.")
+            if v.rule == "rel_agreement"] == []
+
+
+def test_rel_agreement_flagged(checker):
+    assert any(v.rule == "rel_agreement"
+               for v in checker.check("Ο γιατρός η οποία πραγματοποίησε την έκτρωση φεύγει."))
+    assert any(v.rule == "rel_agreement"
+               for v in checker.check("Οι γιατροί τα οποία πραγματοποίησαν την έκτρωση φεύγουν."))

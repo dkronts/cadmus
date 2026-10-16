@@ -109,8 +109,26 @@ def corrupt_propn_accent(text, rng):
     return text[:pos] + new + text[pos + len(word):], "propn_accent"
 
 
+# Unambiguous relative-pronoun forms: flip gender (antecedent agreed with the
+# original, so any gender change breaks REL-ANT agreement).
+REL_FLIP = {"οποίος": "οποίο", "οποίοι": "οποίες", "οποίες": "οποίοι"}
+
+
+def corrupt_rel_agreement(text, rng):
+    cands = [(m.start(), m.group()) for m in re.finditer(r"[Α-Ωα-ωά-ώ]+", text)
+             if m.group().lower() in REL_FLIP]
+    if not cands:
+        return None
+    pos, word = rng.choice(cands)
+    rep = REL_FLIP[word.lower()]
+    if word[0].isupper():
+        rep = rep.capitalize()
+    return text[:pos] + rep + text[pos + len(word):], "rel_agreement"
+
+
 ALL = [corrupt_det, corrupt_typo, corrupt_accent, corrupt_homoglyph,
-       corrupt_negation, corrupt_question_mark, corrupt_spacing, corrupt_propn_accent]
+       corrupt_negation, corrupt_question_mark, corrupt_spacing, corrupt_propn_accent,
+       corrupt_rel_agreement]
 
 
 def corrupt(text, rng):
