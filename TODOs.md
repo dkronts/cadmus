@@ -197,6 +197,13 @@ Newly surfaced gaps:
 - [ ] WordNet/selectional preferences (only if semantics rules ever
       become tractable)
 
+## Brainstorm — next steps
+
+Fill this section only when "Newly surfaced gaps" and the backlog are both
+exhausted (loop step 8 in `AGENTS.md`): propose concrete candidates with
+value / effort / risk / how to measure, then work the autonomous ones and
+ASK USER for any that hit the decision matrix.
+
 ## Done
 
 - [x] v0.0.1 — det-noun / adj-noun / subj-verb (coordination-aware) /
