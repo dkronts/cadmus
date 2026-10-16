@@ -55,3 +55,21 @@ def corpus_pairs(n=200, seed=42):
 
     rng = random.Random(seed)
     return generate_pairs(load_clean_sentences(n), rng)
+
+
+def annotate_with_check(pairs, check):
+    """Attach cadmus's own verdict to each pair (does the checker catch it?).
+
+    `check` is any callable text -> iterable of violations (injected so this
+    module stays stanza-free). A pair counts as caught when a violation's span
+    overlaps the corrupted region; the suggestion is the first overlapping
+    violation that carries one.
+    """
+    for p in pairs:
+        start = p["span_start"]
+        end = start + len(p["broken_fragment"])
+        hits = [v for v in check(p["broken"]) if v.start_char < end and v.end_char > start]
+        p["detected"] = bool(hits)
+        p["detected_rules"] = sorted({v.rule for v in hits})
+        p["suggestion"] = next((v.suggestion for v in hits if v.suggestion), None)
+    return pairs

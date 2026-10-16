@@ -1,6 +1,7 @@
 import random
+from types import SimpleNamespace
 
-from cadmus.export import diff_span, generate_pairs
+from cadmus.export import annotate_with_check, diff_span, generate_pairs
 
 SENTENCES = [
     "Ο πρόεδρος υπέγραψε τη συμφωνία χθες το βράδυ.",
@@ -30,3 +31,29 @@ def test_generate_pairs_are_aligned_and_labelled():
         cf, bf = p["correct_fragment"], p["broken_fragment"]
         assert p["correct"][:s] + cf + p["correct"][s + len(cf):] == p["correct"]
         assert p["broken"][:s] + bf + p["broken"][s + len(bf):] == p["broken"]
+
+
+def _pair():
+    broken = "Η κυβέρνηση μην θα πάρει την απόφαση."
+    start = broken.index("μην")
+    return {"rule": "negation", "broken": broken, "correct": broken.replace("μην", "δεν"),
+            "span_start": start, "broken_fragment": "μην", "correct_fragment": "δεν"}
+
+
+def _v(rule, start, end, suggestion=None):
+    return SimpleNamespace(rule=rule, start_char=start, end_char=end, suggestion=suggestion)
+
+
+def test_annotate_with_check_overlap_catches():
+    end = _pair()["span_start"] + 3
+    pairs = annotate_with_check([_pair()], lambda t: [_v("negation", end - 1, end, "δεν")])
+    assert pairs[0]["detected"] is True
+    assert pairs[0]["detected_rules"] == ["negation"]
+    assert pairs[0]["suggestion"] == "δεν"
+
+
+def test_annotate_with_check_no_overlap_is_miss():
+    pairs = annotate_with_check([_pair()], lambda t: [_v("spelling", 0, 1)])
+    assert pairs[0]["detected"] is False
+    assert pairs[0]["detected_rules"] == []
+    assert pairs[0]["suggestion"] is None

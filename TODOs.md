@@ -102,7 +102,8 @@ Newly surfaced gaps:
 - [x] `cadmus export`: aligned (broken -> correct) pairs from the held-out
       UD-GDT test sentences, labelled by error type with a localized diff span
       (`--format jsonl|json`); model-free (no stanza), CI-tested
-- [ ] `--with-check` to attach the checker's own detection + suggestion per pair
+- [x] `--with-check` to attach the checker's own detection + suggestion per pair
+      (shipped in v0.0.9)
 - [ ] richer targets: multi-error sentences, sentence-pair (context) examples
 
 ## v0.0.8 — Relative-pronoun agreement
@@ -120,7 +121,16 @@ Newly surfaced gaps:
       tokens, which excludes almost every relative clause, so `corrupt_rel_agreement`
       has no samples. Needs a longer-sentence pool or a dedicated relcl sub-corpus
 
-## v0.0.9 — Streaming & batch
+## v0.0.9 — Export self-check
+
+- [x] `export --with-check`: runs the checker on each broken sentence and attaches
+      `detected` (a violation overlapping the corrupted span), `detected_rules`,
+      and the checker's `suggestion` — turning the export into a per-pair QA report
+      on what cadmus actually catches
+- [x] Dependency-injected `annotate_with_check(pairs, check)` keeps `export.py`
+      stanza-free (model-free CI test with a fake checker)
+
+## v0.0.10 — Streaming & batch
 
 - [ ] Batch mode (stanza batch processing) for whole documents
 - [ ] `watch` mode: read a growing file / named pipe — for live-gating
@@ -162,3 +172,6 @@ Newly surfaced gaps:
 - [x] v0.0.8 — `rel_agreement`: `ο οποίος` ↔ antecedent Gender+Number agreement
       via the `acl:relcl` head chain (resolves PP-nested pronouns too);
       dampenable, 0 FP on clean text, model-free + integration tests.
+- [x] v0.0.9 — `export --with-check`: per-pair `detected`/`detected_rules`/
+      `suggestion` from the checker (span-overlap), via a dependency-injected
+      `annotate_with_check` that keeps the export module stanza-free.

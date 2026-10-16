@@ -46,6 +46,8 @@ def main(argv=None):
     p_export.add_argument("--n", type=int, default=200)
     p_export.add_argument("--seed", type=int, default=42)
     p_export.add_argument("--format", choices=["jsonl", "json"], default="jsonl")
+    p_export.add_argument("--with-check", action="store_true", dest="with_check",
+                          help="run the checker on each broken sentence and attach detected/suggestion (needs the model)")
 
     args = p.parse_args(argv)
     checker = CadmusChecker()
@@ -69,9 +71,11 @@ def main(argv=None):
         return 0
 
     if args.cmd == "export":
-        from .export import corpus_pairs
+        from .export import annotate_with_check, corpus_pairs
 
         pairs = corpus_pairs(n=args.n, seed=args.seed)
+        if args.with_check:
+            annotate_with_check(pairs, checker.check)
         if args.format == "json":
             print(json.dumps(pairs, ensure_ascii=False, indent=2))
         else:

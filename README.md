@@ -135,6 +135,14 @@ cadmus export --n 5000 --format jsonl > pairs.jsonl
 #  "span_start":20,"broken_fragment":"η","correct_fragment":"ή"}
 ```
 
+`--with-check` runs the checker on each broken sentence and attaches its own
+verdict, so the export doubles as a QA report on what cadmus actually catches:
+
+```bash
+cadmus export --n 500 --with-check
+# {...,"detected":true,"detected_rules":["det_noun"],"suggestion":"«της»"}
+```
+
 Library:
 
 ```python
@@ -150,8 +158,9 @@ for v in c.check("Η πράσινο δέντρο είναι μεγάλο."):
 See [TODOs.md](TODOs.md). Highlights: verb subcategorization depth, clitics,
 broader suggestion generation (rewriting, not just flagging), and streaming
 `watch` mode for live-gating. Typography + severity taxonomy landed in v0.0.4,
-the proper-noun accent lexicon in v0.0.5, CLI gating in v0.0.6, and the
-data-factory export in v0.0.7.
+the proper-noun accent lexicon in v0.0.5, CLI gating in v0.0.6, the data-factory
+export in v0.0.7, relative-pronoun agreement in v0.0.8, and `export --with-check`
+(a per-pair catch report) in v0.0.9.
 
 ## License
 
