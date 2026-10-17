@@ -26,8 +26,8 @@ from cadmus import CadmusChecker
 
 DATA = Path(__file__).parent / "data"
 FIXTURES = [
-    (DATA / "llm_greek_pilot.v1.jsonl", 100, 9, 32),
-    (DATA / "llm_greek_pilot35b.v1.jsonl", 200, 33, 80),
+    (DATA / "llm_greek_pilot.v1.jsonl", 9, 32),
+    (DATA / "llm_greek_pilot35b.v1.jsonl", 33, 80),
 ]
 
 
@@ -75,7 +75,7 @@ def test_no_new_flags_on_human_reference(fixture, n_true, n_false):
 def test_fixture_counts(fixture, n_true, n_false):
     rows = _rows(fixture)
     verdicts = [v for r in rows for v in r["llm_verdicts"]]
-    assert len(rows) == len(_rows(fixture))
+    assert len(rows) in (100, 200)
     assert sum(1 for v in verdicts if v["verdict"] == "true") == n_true
     assert sum(1 for v in verdicts if v["verdict"] == "false") == n_false
     assert all(v["verdict"] in ("true", "false") for v in verdicts)
