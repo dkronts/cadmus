@@ -189,6 +189,26 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## Round-trip LLM-Greek corpus (pilot, 2026-10-17)
+
+- [x] Methodology shipped: `scripts/roundtrip_corpus.py` — OPUS GlobalVoices
+      EN-EL pairs → local Qwen3-8B (q4) translates EN→EL (temp 0.3); 100-pair
+      pilot generated and **hand-judged** (assistant-as-judge) against the
+      human reference; corpus + verdicts committed as
+      `tests/data/llm_greek_pilot.v1.jsonl` with a regression ratchet
+      (`tests/test_llm_pilot.py`): the 9 TRUE detections must keep firing,
+      no new flags beyond the judged-false/known lists on either side
+- [x] Measured (METRICS): human-Greek FP 29/100 sentences; LLM-Greek flags
+      41/100 with **9 true / 32 false (22% flag precision)**; Qwen3-8B q4 is
+      grammatically near-clean (~9 real errors / 100 round-trips) — a
+      weaker generator or higher temperature is needed for a richer error
+      corpus (next: Local LLM 2 on :8001)
+- [ ] FP-class targets surfaced by the pilot (drives the next cycles):
+      adj_noun form-attestation gate (genitive-attribute/quantifier-chain
+      parse artifacts, 5 flags), verb_valence oblique+να frame gaps (6),
+      conventional date genitive + fossil Gen preps (3), rel_agreement
+      antecedent resolution (2), transliteration/lexical gaps (3)
+
 ## v0.0.19 — Selective two-pass confirmation (`--deep`)
 
 - [x] `check(..., deep=True)` / `cadmus check --deep`: every violation that

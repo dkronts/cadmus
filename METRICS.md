@@ -67,6 +67,20 @@ re-measure, don't trust.
 - `na_form` / `verb_valence` recall bounded by treebank coverage
 - relcl rules have no corruption-pool samples (need a longer-sentence pool)
 
+## Round-trip LLM pilot (100 GlobalVoices pairs, Qwen3-8B q4, 2026-10-17)
+
+- Human-Greek side (real-world clean text): 29 flags / 100 sentences (22
+  sentences flagged) — consistent with the 18% treebank rate
+- LLM-Greek side: 41 flags / 100 sentences (30 flagged); judged **9 true /
+  32 false → 22% flag precision** on machine Greek
+- False-flag causes: parse attachment artifacts 10, tagger feature noise 8,
+  verb_valence frame gaps 6, lexical/transliteration gaps 3, conventions 3,
+  truncated generation 2
+- True detections: 7 orthography (coinages/accent/spacing), 1 agreement
+  (στις δάχτυλα), 1 punctuation — the orthography layer is the workhorse
+- Generator quality: Qwen3-8B q4 grammatically near-clean (~9 real errors
+  per 100 round-trips); richer error corpus needs a weaker model
+
 ## Run log
 
 One row per increment: version, date, what shipped, tests, recall/FP delta,
