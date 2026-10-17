@@ -48,6 +48,14 @@ re-measure, don't trust.
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
 - rare nouns absent from UD train still FP-prone via the tagger
+- det_noun FP paths corrected (code-read): `_dampened` suppresses suspect
+  nouns with unresolved lemma gender; the firing paths are unseen-surface-form
+  nouns (tagger-Gender fallback in `resolve_gender`) and suspect nouns with
+  resolved lemma gender — next increment targets form-level gender derived
+  from the persisted entries
+- gender-coverage extensions must derive from the persisted `entries` at
+  resolve time (`nominal_cases` precedent); `build()`-filter changes are inert
+  against the cached `lexicon.v2.json` because `load()` short-circuits to it
 - `PropnLexicon.forms` holds ~5.5k unaccented title variants (`απο`, `βορεια`)
   — unsafe as a known-word set for unaccented tokens (accent recall 87→60%
   when trusted; v0.0.15 restricts PROPN coverage to accented tokens)

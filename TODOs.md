@@ -35,7 +35,19 @@ Newly surfaced gaps:
 - [x] PROPN coverage: place-name/person accent errors (Ρωσια, Τύορκους) —
       added a proper-noun accent rule backed by a Wikipedia+UD title lexicon
       (see v0.0.5). Inflected/foreign forms stay silent by design (ambiguous)
-- [ ] rare nouns absent from UD train (πρόποδες) still FP-prone via tagger
+- [ ] rare nouns absent from UD train (πρόποδες) still FP-prone via tagger.
+      Corrected mechanics (code-read of `checker._dampened`): the dampener
+      *suppresses* suspect nouns whose lemma gender is unresolved in
+      `noun_genders`; the live firing paths are (a) nouns whose surface form
+      is unseen in UD-train (never suspect → the rule falls back to tagger
+      Gender via `resolve_gender`) and (b) suspect nouns whose lemma gender
+      IS resolved. Planned increment (not yet built/measured): derive
+      form-level gender sets from the persisted `entries` at resolve time
+      (`nominal_cases` precedent) and fire only on genuinely disjoint
+      attested evidence. Constraint: relaxing `build()`'s unique-gender +
+      ≥2-attestation filter is inert — `load()` short-circuits to the cached
+      `lexicon.v2.json`, so coverage must come from the persisted entries
+      (or an asset-filename bump)
 - [ ] det corruption misses when stanza re-parses structure (attach changes)
 - [ ] stanza emits no Mood=Sub for Greek: any future mood-dependent rule must
       use positional context (see rules/negation.py)
@@ -236,7 +248,7 @@ Newly surfaced gaps:
 ## Brainstorm — next steps
 
 Fill this section only when "Newly surfaced gaps" and the backlog are both
-exhausted (loop step 8 in `AGENTS.md`): propose concrete candidates with
+exhausted (loop step 9 in `AGENTS.md`): propose concrete candidates with
 value / effort / risk / how to measure, then work the autonomous ones and
 ASK USER for any that hit the decision matrix.
 
