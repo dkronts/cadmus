@@ -189,6 +189,24 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.17 — det_noun form-level attestation gate (Case/Number)
+
+- [x] New `FormLexicon.form_feats(form)`: feature → attested values for a
+      surface form as NOUN/PROPN, derived read-time from the persisted
+      `entries` (the dormant `nominal_cases` precedent — no asset change;
+      `build()`-filter relaxation stays inert per the cache findings)
+- [x] `det_noun` suppresses a Case/Number mismatch when the noun's surface
+      form is attested with the article's value (case/number-syncretic form
+      → analyzer noise, not an error). **Gender is exempt and unseen forms
+      keep the old behavior** — measured: gating Gender or unseen forms
+      drops pool recall 58%→38% (dual-gender-attested forms and
+      tagger-right-on-unseen-nouns are real detection paths)
+- [x] Measured: full 456-sentence clean sweep det_noun FPs **23 → 19**
+      (residue = unseen-form Gender noise + dual-usage nouns like
+      «Υπουργός» — a tagger-quality ceiling); eval pool FP and recall
+      identical (det 58%, accent 87%, nonword 96%); no new FP elsewhere.
+      5 model-free unit tests + FakeLexicon `form_feats` capability flag
+
 ## v0.0.16 — Typography-first normalization (analysis shadow)
 
 - [x] `CadmusChecker.check`/`check_batch` now analyze a **shadow copy** with

@@ -32,6 +32,62 @@ def test_det_noun_heteroclite_escape():
     assert det_noun(s, by_id, {}) == []
 
 
+def test_det_noun_form_attested_with_article_suppressed():
+    # the noun's surface form is attested with the article's CASE: syncretic noise
+    words = [
+        FW(1, "το", "DET", "Case=Acc|Gender=Neut|Number=Sing", head=2, deprel="det"),
+        FW(2, "ένταλμα", "NOUN", "Case=Nom|Gender=Neut|Number=Sing", lemma="ένταλμα"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"το": "Neut"},
+                      form_feats={"ένταλμα": {"Case": {"Nom", "Acc"}}})
+    assert det_noun(s, by_id, {"lexicon": lex}) == []
+
+
+def test_det_noun_form_case_disjoint_fires():
+    words = [
+        FW(1, "το", "DET", "Case=Acc|Gender=Neut|Number=Sing", head=2, deprel="det"),
+        FW(2, "βιβλίο", "NOUN", "Case=Nom|Gender=Neut|Number=Sing", lemma="βιβλίο"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"το": "Neut"},
+                      form_feats={"βιβλίο": {"Case": {"Nom"}}})
+    assert any("Case" in f[2] for f in det_noun(s, by_id, {"lexicon": lex}))
+
+
+def test_det_noun_gender_not_gated_even_when_attested():
+    # Gender mismatches always fire (the corruption target swaps article gender)
+    words = [
+        FW(1, "Η", "DET", "Case=Nom|Gender=Fem|Number=Sing", head=2, deprel="det"),
+        FW(2, "υπουργός", "NOUN", "Case=Nom|Gender=Masc|Number=Sing", lemma="υπουργός"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"η": "Fem"},
+                      form_feats={"υπουργός": {"Gender": {"Masc", "Fem"}}})
+    assert any("Gender" in f[2] for f in det_noun(s, by_id, {"lexicon": lex}))
+
+
+def test_det_noun_unseen_form_still_fires():
+    # unseen forms keep the tagger-based behavior (recall protection)
+    words = [
+        FW(1, "τους", "DET", "Case=Acc|Gender=Masc|Number=Plur", head=2, deprel="det"),
+        FW(2, "πρόποδες", "NOUN", "Case=Acc|Gender=Fem|Number=Plur", lemma="πρόποδη"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"τους": "Masc"}, form_feats={})
+    assert det_noun(s, by_id, {"lexicon": lex})
+
+
+def test_det_noun_without_form_feats_resource_keeps_old_behavior():
+    words = [
+        FW(1, "τους", "DET", "Case=Acc|Gender=Masc|Number=Plur", head=2, deprel="det"),
+        FW(2, "πρόποδες", "NOUN", "Case=Acc|Gender=Fem|Number=Plur", lemma="πρόποδη"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"τους": "Masc"})
+    assert det_noun(s, by_id, {"lexicon": lex})
+
+
 def test_adj_noun_case_mismatch_skipped():
     words = [
         FW(1, "πολύχρωμων", "ADJ", "Case=Gen|Gender=Fem|Number=Plur", head=2, deprel="amod"),

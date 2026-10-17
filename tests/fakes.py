@@ -22,10 +22,15 @@ class FS:
 
 
 class FakeLexicon:
-    def __init__(self, det_genders=None, noun_genders=None, suspect_ids=()):
+    def __init__(self, det_genders=None, noun_genders=None, suspect_ids=(),
+                 form_feats=None):
         self.det_genders = det_genders or {}
         self.noun_genders = noun_genders or {}
         self.suspect_ids = set(suspect_ids)
+        if form_feats is not None:
+            # capability flag: the rule detects form_feats by getattr, so the
+            # method exists only when the test configures attestation data
+            self.form_feats = lambda text: form_feats.get(text.lower(), {})
 
     def resolve_det_gender(self, word):
         return self.det_genders.get(word.text.lower())

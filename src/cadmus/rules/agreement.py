@@ -41,8 +41,28 @@ def _det_gender(w, f, env):
     return f.get("Gender")
 
 
+def _form_feats_gate(lex, h, k, det_val):
+    """True when the noun's surface form supports the article's reading.
+
+    Form-level attestation from the treebank, applied to Case/Number only:
+    if the form is attested (as NOUN/PROPN) with the article's value, the
+    mismatch is analyzer noise on a case/number-syncretic form, not an error
+    (Gender is exempt: the corruption target swaps article gender, and
+    dual-gender-attested forms would lose real detections)."""
+    if k not in ("Case", "Number"):
+        return False
+    ff = getattr(lex, "form_feats", None)
+    if ff is None:
+        return False
+    attested = ff(h.text).get(k)
+    if not attested:
+        return False
+    return det_val in attested
+
+
 def det_noun(sent, by_id, env):
     out = []
+    lex = env.get("lexicon")
     for w in sent.words:
         if w.deprel != "det":
             continue
@@ -61,6 +81,8 @@ def det_noun(sent, by_id, env):
             noun_val = noun_gender if k == "Gender" else hf.get(k)
             det_val = det_gender if k == "Gender" else f.get(k)
             if det_val is not None and noun_val is not None and det_val != noun_val:
+                if lex is not None and _form_feats_gate(lex, h, k, det_val):
+                    continue
                 msg = f"DET-NOUN {k}: '{w.text}'[{det_val}] vs '{h.text}'[{noun_val}]"
                 out.append((w, h, msg, f"«{target}»") if target else (w, h, msg))
     return out

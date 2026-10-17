@@ -158,6 +158,19 @@ class FormLexicon:
                     cases.add(case)
         return cases
 
+    def form_feats(self, form):
+        """Feature -> set of attested values for a surface form as NOUN/PROPN.
+
+        Read-time derivation from entries (the nominal_cases precedent):
+        immune to the tagger repairing feats; empty for unseen forms
+        (precision-first)."""
+        out = {}
+        for upos, pairs in self.entries.get(form.lower(), ()):
+            if upos in ("NOUN", "PROPN"):
+                for k, v in pairs:
+                    out.setdefault(k, set()).add(v)
+        return out
+
 
 class VerbForms:
     """Surface-form verb classes from UD-GDT, used to detect a past indicative
