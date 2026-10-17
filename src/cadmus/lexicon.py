@@ -297,6 +297,22 @@ class VerbFrames:
                                     for k, v in c.items()})
                     for lemma, c in data.items()})
 
+    @staticmethod
+    def _skeleton(frame):
+        """Argument skeleton: ccomp/xcomp collapse to 'clause' (the tagger
+        assigns them inconsistently), obj/iobj to 'objlike' (clitic tagging
+        noise), expl is dropped (semantically empty expletive)."""
+        s = set()
+        for dep in frame:
+            base = dep.split(":")[0]
+            if base == "expl":
+                continue
+            if base in ("ccomp", "xcomp"):
+                s.add("clause")
+            elif base in ("obj", "iobj"):
+                s.add("objlike")
+        return frozenset(s)
+
     def unexpected(self, verb_word, children):
         counter = self.counters.get((verb_word.lemma or "").lower())
         if not counter:
@@ -308,6 +324,13 @@ class VerbFrames:
         if not core or core in counter:
             return None
         if not ({"obj", "iobj"} & set(core)):
+            return None
+        # v0.0.21 argument-skeleton relaxation: flag only a genuine
+        # object-pattern surprise — a verb that never takes an object-like
+        # argument in any attested frame. Frame-set differences in clause
+        # labels (ccomp/xcomp) and clitic case (obj/iobj) are analyzer
+        # noise, not valence evidence.
+        if any("objlike" in self._skeleton(frame) for frame in counter):
             return None
         known = counter.most_common(3)
         pretty = " | ".join(f"«{' + '.join(k) if any(k) else 'no core object'}» ({v})" for k, v in known)

@@ -189,6 +189,28 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.21 — verb_valence argument-skeleton relaxation
+
+- [x] Recon: all 11 treebank FPs decomposed — 10 differed from attested
+      frames only in **clause labels (ccomp↔xcomp)**, **clitic case
+      (obj↔iobj)**, or subset relations (here-obj ⊂ attested obj+xcomp);
+      1 genuine case (οφείλει+obj — legit Greek absent from the sparse
+      UD-GDT frames)
+- [x] `VerbFrames._skeleton`: ccomp/xcomp collapse to 'clause' (tagger
+      assigns them inconsistently — documented since the clitics
+      rejection), obj/iobj to 'objlike' (indirect clitics are tagged obj),
+      expl dropped. The rule now fires **only on a genuine object-pattern
+      surprise**: a verb with ≥4 attested frames, none containing any
+      object-like argument, taking a direct object ("κοιμάται γάλα",
+      "τρέχει κάτι")
+- [x] Measured: verb_valence **11 → 1 FP** per 456 clean sweep (residue:
+      οφείλω+obj, a legit pattern the treebank never attests — a frame
+      sparsity ceiling, documented like prep_case's από+παραλίες); eval
+      pool FP/recall identical; both pilot ratchets green (the 6 βοηθώ
+      pilot FPs die; zero pilot trues touched). Semantics change covered
+      by rewritten unit tests (old test asserted obj+iobj fires — now
+      defined as clitic noise)
+
 ## v0.0.20 — adj_noun form-attestation guards (0-FP tier)
 
 - [x] Recon first: all 9 treebank adj_noun FPs decomposed — 6 "adjectives"

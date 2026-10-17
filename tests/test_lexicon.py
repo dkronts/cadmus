@@ -58,6 +58,14 @@ def test_verb_frames_unexpected(tmp_path):
     class _V:
         text, lemma = "τρώει", "τρώω"
 
-    msg = frames.unexpected(_V(), [_C("obj"), _C("iobj")])
-    assert msg is not None and "VERB-VALENCE" in msg
+    # v0.0.21 skeleton relaxation: obj+iobj is clitic-tagging noise against
+    # an attested obj frame, not a valence surprise
+    assert frames.unexpected(_V(), [_C("obj"), _C("iobj")]) is None
     assert frames.unexpected(_V(), [_C("obj")]) is None
+
+    from collections import Counter
+
+    intrans = VerbFrames({"τρώω": Counter({(): 9})})
+    intrans.MIN_TOTAL = 2
+    msg = intrans.unexpected(_V(), [_C("obj")])
+    assert msg is not None and "VERB-VALENCE" in msg

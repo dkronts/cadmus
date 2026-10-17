@@ -275,6 +275,28 @@ def test_prep_case_seen_head_wrong_case_fires():
     assert any("Gen" in f[2] for f in prep_case(s, by_id, {"lexicon": lex}))
 
 
+def test_verb_valence_skeleton_relaxation():
+    from collections import Counter
+
+    from cadmus.lexicon import VerbFrames
+
+    frames = VerbFrames({"βοηθώ": Counter({("obj",): 6, (): 4}),
+                         "κοιμάμαι": Counter({(): 9})})
+    verb = FW(1, "βοηθεί", "VERB", lemma="βοηθώ", head=0, deprel="root")
+    obj = FW(2, "τους", "PRON", "Case=Acc|Number=Plur", head=1, deprel="obj")
+    xcomp = FW(3, "να", "VERB", head=1, deprel="xcomp")
+    # obj + xcomp against attested obj: clause-label noise, suppressed
+    assert frames.unexpected(verb, [obj, xcomp]) is None
+    # ccomp + iobj (clitic noise) also suppressed
+    ccomp = FW(4, "ότι", "VERB", head=1, deprel="ccomp")
+    iobj = FW(5, "μας", "PRON", "Case=Gen|Number=Plur", head=1, deprel="iobj")
+    assert frames.unexpected(verb, [iobj, ccomp]) is None
+    # a pure-intransitive verb with a direct object still fires
+    sleeper = FW(1, "κοιμάται", "VERB", lemma="κοιμάμαι", head=0, deprel="root")
+    o = FW(2, "γάλα", "NOUN", "Case=Acc|Number=Sing", head=1, deprel="obj")
+    assert frames.unexpected(sleeper, [o]) is not None
+
+
 def test_negation_delta_with_subjunctive():
     words = [
         FW(1, "να", "AUX"),
