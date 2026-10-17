@@ -75,3 +75,4 @@ perf if re-measured.
 |---|---|---|---|---|---|---|
 | v0.0.14 | 2026-10 | `num_noun` (surface-form numeral gender) | 78 | targeted probes only | 0 | — |
 | v0.0.15 | 2026-10 | spelling: env-lexicon coverage suppression (accented-only PROPN) + abbreviation/elision guards | 89 | unchanged (accent 87%, nonword 96%, script-mix 95%, propn_accent 78%) | spelling 77→22 per 456 clean; other rules unchanged | — |
+| v0.0.16 | 2026-10 | typography-first normalization: analysis shadow + offset mapper | 101 | identical (accent 87%, nonword 96%, script-mix 95%, propn_accent 78%, det 58%, negation/typography 100%) | identical per-rule FP on 456 clean | 34 sent/s batch |

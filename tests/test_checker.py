@@ -119,3 +119,20 @@ def test_spelling_unknown_word_still_flagged(checker):
     vs = [v for v in checker.check("Ο σκανταλοτρυγόνος τραγουδά δυνατά.")
           if v.rule == "spelling"]
     assert vs and "σκανταλοτρυγόνος" in vs[0].message
+
+
+def test_messy_text_offsets_map_to_original(checker):
+    """The parser sees the normalized shadow; reported offsets stay original."""
+    s = "Η πράσινο δέντρο , είναι μεγάλο?"
+    vs = checker.check(s)
+    assert any(v.rule == "det_noun" for v in vs), f"expected det_noun through the shadow: {vs}"
+    for v in vs:
+        assert 0 <= v.start_char < v.end_char <= len(s)
+    q = [v for v in vs if v.rule == "typography" and "'?'" in v.message]
+    assert q and s[q[0].start_char] == "?"
+
+
+def test_messy_text_sentence_shows_original(checker):
+    s = "Το παιδί  παίζει,καλά."
+    for v in checker.check(s):
+        assert v.sentence == s or v.sentence in s

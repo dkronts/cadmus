@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from .data import RULE_SEVERITY
 from .lexicon import FormLexicon
+from .normalize import normalize_for_analysis
 from .pipeline import load_pipeline
 from .rules import DAMPENABLE, RULES
 from .rules.typography import typography
@@ -72,7 +73,13 @@ class CadmusChecker:
         return self._verbforms or None
 
     def check(self, text):
-        return self._analyze(text, self.nlp(text))
+        """Analyze `text` through a typography-normalized shadow copy.
+
+        The parser sees punctuation/spacing fixes (better tokenization on
+        messy machine output); all reported offsets/sentences refer to the
+        original text via an offset mapper."""
+        shadow, mapper = normalize_for_analysis(text)
+        return self._analyze(text, self.nlp(shadow), mapper)
 
     def check_batch(self, texts, batch_size=32):
         """Check many texts efficiently via the pipeline's batched processor.
@@ -85,8 +92,10 @@ class CadmusChecker:
         results = []
         for i in range(0, len(texts), batch_size):
             chunk = texts[i:i + batch_size]
-            for text, doc in zip(chunk, self._iter_docs(chunk)):
-                results.append(self._analyze(text, doc))
+            normalized = [normalize_for_analysis(t) for t in chunk]
+            docs = self._iter_docs([shadow for shadow, _ in normalized])
+            for orig, (_, mapper), doc in zip(chunk, normalized, docs):
+                results.append(self._analyze(orig, doc, mapper))
         return results
 
     def _iter_docs(self, texts):
@@ -96,7 +105,7 @@ class CadmusChecker:
             return self.nlp.process_many(texts)
         return [self.nlp(t) for t in texts]
 
-    def _analyze(self, text, doc):
+    def _analyze(self, text, doc, mapper=None):
         violations = []
         for s, e, msg, sug in typography(text):
             containing = next(
@@ -104,7 +113,10 @@ class CadmusChecker:
                  if sent.tokens and sent.tokens[0].start_char <= s < sent.tokens[-1].end_char + 1),
                 None,
             )
-            sent_text = containing.text if containing else text[:80]
+            if containing is not None:
+                sent_text = self._orig_sentence_text(text, containing, mapper)
+            else:
+                sent_text = text[:80]
             violations.append(Violation(sent_text, "typography", msg, s, e, suggestion=sug))
         for sent in doc.sentences:
             by_id = {w.id: w for w in sent.words}
@@ -113,6 +125,7 @@ class CadmusChecker:
                 env["lexicon"] = self.lexicon()
             env["propn"] = self.propn()
             env["verbforms"] = self.verbforms()
+            sent_text = self._orig_sentence_text(text, sent, mapper)
             for name, fn in RULES.items():
                 for flag in fn(sent, by_id, env):
                     w, h, msg = flag[0], flag[1], flag[2]
@@ -121,11 +134,25 @@ class CadmusChecker:
                         self._damp_stats["suppressed"] += 1
                         continue
                     self._damp_stats["fired"] += 1
+                    start, end = self._offsets(sent, w)
+                    if mapper is not None:
+                        start, end = mapper.span_to_orig(start, end)
                     violations.append(
-                        Violation(sent.text, name, msg, *self._offsets(sent, w),
+                        Violation(sent_text, name, msg, start, end,
                                   suggestion=suggestion)
                     )
         return violations
+
+    @staticmethod
+    def _orig_sentence_text(text, sent, mapper):
+        if mapper is None:
+            return sent.text
+        tokens = getattr(sent, "tokens", None)
+        if not tokens:
+            return sent.text
+        start = mapper.to_orig(tokens[0].start_char)
+        end = mapper.to_orig(tokens[-1].end_char)
+        return text[start:end]
 
     def diagnose(self, text):
         """Report analyzer feature coverage over `text` (why rules may stay silent)."""

@@ -189,6 +189,24 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.16 — Typography-first normalization (analysis shadow)
+
+- [x] `CadmusChecker.check`/`check_batch` now analyze a **shadow copy** with
+      typography fixes applied (`?`→`;`, double spaces collapsed, space before
+      punctuation removed, missing space after punctuation inserted — decimals
+      `3,14`, times `10:30`, ellipses exempt). Detection stays on the original:
+      an offset mapper maps every reported span and sentence text back, so
+      messy LLM/STT input tokenizes cleanly without rewriting user text
+      (detection-only invariant intact)
+- [x] Measured: eval pool (n=100, seed 42) — FP and recall identical to
+      v0.0.15 (adj_noun 1, det_noun 3, spelling 1; accent 87%, nonword 96%,
+      script-mix 95%, propn_accent 78%, det 58%, negation/typography 100%);
+      full 456-sentence clean sweep FP distribution identical
+      (prep_case 26, det_noun 23, spelling 22, verb_valence 11, adj_noun 9,
+      rel_agreement 9, typography 5, subj_verb 5, propn_accent 1); batch
+      34 sent/s (budget ≥17). 10 model-free normalize/mapper tests +
+      2 integration tests (offsets/sentence text on messy input)
+
 ## v0.0.15 — Spelling precision (lexicon coverage + abbreviation guards)
 
 - [x] `spelling` now consults the per-sentence env lexicons the checker already
@@ -256,6 +274,8 @@ ASK USER for any that hit the decision matrix.
 
 - [x] v0.0.1 — det-noun / adj-noun / subj-verb (coordination-aware) /
       prep-case rules; demo corpus as regression set; CLI
+- [x] v0.0.16 — typography-first normalization: analysis shadow + offset
+      mapper (see the v0.0.16 section)
 - [x] v0.0.4 — typography rule (`?`→`;`, spacing, capitalization), severity
       taxonomy on every violation, `det_noun` article suggestions, model-free
       rule unit tests + GitHub Actions CI. Measured (150 UD-GDT test sentences):

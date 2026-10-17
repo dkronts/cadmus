@@ -28,7 +28,8 @@ Cadmus is built as infrastructure, not a point tool:
 ## How it works
 
 ```
-text → stanza (Greek: tokenize, POS, morph features, lemmas, dependencies)
+text → typography-normalized shadow (analysis only; offsets mapped back)
+     → stanza (Greek: tokenize, POS, morph features, lemmas, dependencies)
      → rule engine (checks over the morphosyntactic analysis)
      → violations: rule id, severity, message, character offsets, suggestions
 ```
