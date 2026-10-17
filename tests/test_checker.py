@@ -151,3 +151,20 @@ def test_prep_case_new_gen_preps_clean(checker):
               "Το σχέδιο είναι υπό έλεγχο.",
               "Εν συντομία, όλα κρίθηκαν έγκαιρα."):
         assert [v for v in checker.check(s) if v.rule == "prep_case"] == [], s
+
+
+def test_deep_confirmation_confirms_good_suggestion(checker):
+    vs = [v for v in checker.check("Βλέπω τους καρέκλες.", deep=True)
+          if v.rule == "det_noun"]
+    assert vs, "expected a det_noun flag"
+    assert vs[0].suggestion.strip("«»") == "τις"
+    assert vs[0].confirmed is True
+    # without deep, confirmation is not attempted
+    plain = [v for v in checker.check("Βλέπω τους καρέκλες.") if v.rule == "det_noun"]
+    assert plain[0].confirmed is None
+
+
+def test_deep_confirmation_confirms_spelling_suggestion(checker):
+    vs = [v for v in checker.check("Αύριο διαβασω το μάθημα.", deep=True)
+          if v.rule == "spelling"]
+    assert vs and vs[0].confirmed is True

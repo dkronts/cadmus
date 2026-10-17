@@ -128,8 +128,15 @@ drive the pipeline (0 = clean, 1 = violations remain):
 ```bash
 cadmus check draft.txt --severity medium   # ignore low-severity style nits
 cadmus check draft.txt --rules negation,prep_case   # only these checks
+cadmus check draft.txt --deep              # confirm each suggestion by re-analysis
 cadmus check draft.txt --quiet || echo "needs review"
 ```
+
+`--deep` runs a second analysis pass per suggestion: the fix is applied to a
+copy and the same rule must no longer fire there (`✓confirmed` in output,
+`confirmed` in JSON) — analyzer-verified suggestions, not just pattern
+matches. Slower (one extra analysis per suggestion); the default path is
+unchanged.
 
 ### Live-gating a model
 

@@ -189,6 +189,25 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.19 — Selective two-pass confirmation (`--deep`)
+
+- [x] `check(..., deep=True)` / `cadmus check --deep`: every violation that
+      carries a suggestion is **confirmed by re-analysis** — the suggestion
+      is applied to a copy (detection-only intact: user text never modified)
+      and the same rule must no longer fire at that span; results expose
+      `Violation.confirmed` (None when not attempted, False when the
+      suggestion fails to clear the flag) in the API, `--json`, and the CLI
+      renderer (`✓confirmed`)
+- [x] This is the architectural answer to "the tagger *repairs* the error":
+      a flag whose suggested fix re-parses clean is analyzer-verified, not
+      just pattern-matched — and a suggestion that does *not* clear the
+      flag is surfaced as unconfirmed (data-quality signal for the export
+      data factory)
+- [x] Opt-in because it costs one extra analysis per suggestion-bearing
+      violation; the default path is unchanged (34 sent/s batch measured at
+      v0.0.16). 2 integration tests (det_noun «τις» and spelling διαβάσω
+      confirm; `confirmed is None` without deep)
+
 ## v0.0.18 — prep_case precision (measured GEN_PREPS + four guards)
 
 - [x] FP composition re-measured on the 456-sentence clean sweep (26 flags):

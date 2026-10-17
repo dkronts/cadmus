@@ -14,7 +14,8 @@ def _render(violations):
         return
     for v in violations:
         extra = f"  → {v.suggestion}" if v.suggestion else ""
-        print(f"[{v.rule}/{v.severity}] {v.message}{extra}  "
+        mark = " ✓confirmed" if getattr(v, "confirmed", None) else ""
+        print(f"[{v.rule}/{v.severity}] {v.message}{extra}{mark}  "
               f"(offset {v.start_char}-{v.end_char}) in: {v.sentence}")
 
 
@@ -34,6 +35,9 @@ def main(argv=None):
                          help="comma-separated rule ids to report")
     p_check.add_argument("--quiet", action="store_true",
                          help="print nothing; exit code 1 if any (filtered) violation remains")
+    p_check.add_argument("--deep", action="store_true",
+                         help="confirm each suggestion with a second analysis pass "
+                              "(slower: one extra analysis per suggestion)")
 
     sub.add_parser("demo", help="run on the built-in demo corpus")
 
@@ -140,7 +144,7 @@ def main(argv=None):
         return 0
 
     text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
-    violations = checker.check(text)
+    violations = checker.check(text, deep=getattr(args, "deep", False))
     rules = args.rules.split(",") if args.rules else None
     violations = filter_violations(violations, min_severity=args.severity, rules=rules)
     if args.quiet:

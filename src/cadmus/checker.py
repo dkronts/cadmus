@@ -18,6 +18,7 @@ class Violation:
     start_char: int
     end_char: int
     suggestion: str = ""
+    confirmed: bool = None
     severity: str = field(default="medium", init=False)
 
     def __post_init__(self):
@@ -31,6 +32,7 @@ class Violation:
             "start_char": self.start_char,
             "end_char": self.end_char,
             "suggestion": self.suggestion,
+            "confirmed": self.confirmed,
             "severity": self.severity,
         }
 
@@ -72,14 +74,41 @@ class CadmusChecker:
                 self._verbforms = False
         return self._verbforms or None
 
-    def check(self, text):
+    def check(self, text, deep=False):
         """Analyze `text` through a typography-normalized shadow copy.
 
         The parser sees punctuation/spacing fixes (better tokenization on
         messy machine output); all reported offsets/sentences refer to the
-        original text via an offset mapper."""
+        original text via an offset mapper.
+
+        With ``deep=True``, every violation carrying a suggestion is
+        *confirmed* by a second analysis pass: the suggestion is applied to
+        a copy and the same rule must no longer fire at that span. Costs one
+        extra analysis per suggestion-bearing violation."""
         shadow, mapper = normalize_for_analysis(text)
-        return self._analyze(text, self.nlp(shadow), mapper)
+        violations = self._analyze(text, self.nlp(shadow), mapper)
+        if deep:
+            self._confirm_suggestions(text, violations)
+        return violations
+
+    def _confirm_suggestions(self, text, violations):
+        for v in violations:
+            v.confirmed = False
+            sug = v.suggestion.strip().strip("«»")
+            if not sug or v.start_char < 0 or v.end_char <= v.start_char:
+                continue
+            corrected = text[:v.start_char] + sug + text[v.end_char:]
+            try:
+                recheck = self._analyze(corrected, self.nlp(corrected))
+            except Exception:
+                continue
+            region = (v.start_char, v.start_char + len(sug))
+            still_flagged = any(
+                r.rule == v.rule
+                and not (r.end_char <= region[0] or r.start_char >= region[1])
+                for r in recheck
+            )
+            v.confirmed = not still_flagged
 
     def check_batch(self, texts, batch_size=32):
         """Check many texts efficiently via the pipeline's batched processor.
