@@ -1,11 +1,16 @@
 """Morphological feature utilities and static linguistic data for Modern Greek."""
 
 GEN_PREPS = {
-    "λόγω", "εκτός", "έναντι", "ένεκα", "αντί", "διά", "υπό", "προ",
+    "λόγω", "εκτός", "έναντι", "ένεκα", "αντί", "διά", "προ",
     "εκ", "εξ", "μεταξύ",
+    # measured (v0.0.18, 456-sentence clean sweep): these also govern Gen in
+    # edited Greek and were the dominant prep_case FP source when classed Acc
+    "εξαιτίας", "μέσω", "εναντίον", "περί", "υπέρ", "ενώπιον",
+    "απόρροια",
 }
 
-AMBIGUOUS_PREPS = {"παρά", "κατά"}
+# dual-government prepositions (Gen or Acc, both standard) — never flagged
+AMBIGUOUS_PREPS = {"παρά", "κατά", "υπό", "μέχρι"}
 
 HETEREOCLITE_PLURALS = {
     "πλευρά": "Neut",

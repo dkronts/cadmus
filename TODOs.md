@@ -189,6 +189,26 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.18 — prep_case precision (measured GEN_PREPS + four guards)
+
+- [x] FP composition re-measured on the 456-sentence clean sweep (26 flags):
+      12 were prepositions that govern Gen in edited Greek but were classed
+      Acc — **GEN_PREPS extended**: εξαιτίας, μέσω, εναντίον, περί, υπέρ,
+      ενώπιον, απόρροια (these now also *detect* their Acc errors — new
+      capability, probe-tested); **υπό and μέχρι moved to AMBIGUOUS_PREPS**
+      (genuinely dual Gen/Acc: υπό έλεγχο / υπό του ελέγχου, μέχρι το βράδυ
+      / μέχρι της στιγμής — silent both ways, precision-first)
+- [x] Three rule guards: fossilized **Dat** skipped (εν τάξει, εν συντομία),
+      **PRON** heads skipped (weak/relative pronoun Case is tagger-noise),
+      head forms **unseen in entries** skipped (the dormant
+      `FormLexicon.nominal_cases` activated: no attestation → no evidence
+      for the tagger's Case)
+- [x] Measured: prep_case FPs **26 → 1** per 456 clean (residue: από +
+      παραλίες tagged Nom — 1); eval pool FP/recall identical everywhere
+      (prep_case has no corruption-pool target — validated by 7 new
+      model-free unit tests + 2 integration probe pairs). prep_case joins
+      the 0-FP tier on the eval pool (was ~2/100)
+
 ## v0.0.17 — det_noun form-level attestation gate (Case/Number)
 
 - [x] New `FormLexicon.form_feats(form)`: feature → attested values for a

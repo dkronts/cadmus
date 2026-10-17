@@ -198,6 +198,83 @@ def test_prep_case_gen_governing():
     assert any("Gen" in f[2] for f in prep_case(s, by_id, {}))
 
 
+def test_prep_case_measured_gen_preps_govern_gen():
+    for adp in ("Εξαιτίας", "Μέσω", "Εναντίον", "Περί", "Υπέρ", "Ενώπιον"):
+        words = [
+            FW(1, adp, "ADP", head=2, deprel="case"),
+            FW(2, "προβλήματος", "NOUN", "Case=Gen|Gender=Neut|Number=Sing"),
+        ]
+        s, by_id = sent(words)
+        assert prep_case(s, by_id, {}) == [], adp
+
+
+def test_prep_case_mechri_dual_case_skipped():
+    for case in ("Acc", "Gen"):
+        words = [
+            FW(1, "μέχρι", "ADP", head=2, deprel="case"),
+            FW(2, "βράδυ" if case == "Acc" else "βραδίου",
+               "NOUN", f"Case={case}|Gender=Neut|Number=Sing"),
+        ]
+        s, by_id = sent(words)
+        assert prep_case(s, by_id, {}) == [], case
+
+
+def test_prep_case_new_gen_prep_flags_acc():
+    words = [
+        FW(1, "Εξαιτίας", "ADP", head=2, deprel="case"),
+        FW(2, "πρόβλημα", "NOUN", "Case=Acc|Gender=Neut|Number=Sing"),
+    ]
+    s, by_id = sent(words)
+    assert any("Gen" in f[2] for f in prep_case(s, by_id, {}))
+
+
+def test_prep_case_fossilized_dative_skipped():
+    words = [
+        FW(1, "εν", "ADP", head=2, deprel="case"),
+        FW(2, "συντομία", "NOUN", "Case=Dat|Gender=Fem|Number=Sing"),
+    ]
+    s, by_id = sent(words)
+    assert prep_case(s, by_id, {}) == []
+
+
+def test_prep_case_ypo_dual_case_skipped():
+    words = [
+        FW(1, "υπό", "ADP", head=2, deprel="case"),
+        FW(2, "έλεγχο", "NOUN", "Case=Acc|Gender=Masc|Number=Sing"),
+    ]
+    s, by_id = sent(words)
+    assert prep_case(s, by_id, {}) == []
+
+
+def test_prep_case_pron_head_skipped():
+    words = [
+        FW(1, "σε", "ADP", head=2, deprel="case"),
+        FW(2, "μας", "PRON", "Case=Gen|Number=Plur|Person=1"),
+    ]
+    s, by_id = sent(words)
+    assert prep_case(s, by_id, {}) == []
+
+
+def test_prep_case_unseen_head_form_skipped():
+    words = [
+        FW(1, "για", "ADP", head=2, deprel="case"),
+        FW(2, "Ανατολάς", "PROPN", "Case=Gen|Number=Plur"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(nominal_cases={})
+    assert prep_case(s, by_id, {"lexicon": lex}) == []
+
+
+def test_prep_case_seen_head_wrong_case_fires():
+    words = [
+        FW(1, "Λόγω", "ADP", head=2, deprel="case"),
+        FW(2, "καθυστέρηση", "NOUN", "Case=Acc|Gender=Fem|Number=Sing"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(nominal_cases={"καθυστέρηση": ["Gen", "Acc"]})
+    assert any("Gen" in f[2] for f in prep_case(s, by_id, {"lexicon": lex}))
+
+
 def test_negation_delta_with_subjunctive():
     words = [
         FW(1, "να", "AUX"),

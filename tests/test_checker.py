@@ -136,3 +136,18 @@ def test_messy_text_sentence_shows_original(checker):
     s = "Το παιδί  παίζει,καλά."
     for v in checker.check(s):
         assert v.sentence == s or v.sentence in s
+
+
+def test_prep_case_new_gen_preps_flagged(checker):
+    assert any(v.rule == "prep_case"
+               for v in checker.check("Εξαιτίας το πρόβλημα, αναβλήθηκε η συνεδρίαση."))
+    assert any(v.rule == "prep_case"
+               for v in checker.check("Μέσω την τηλεόραση μεταδόθηκε η είδηση."))
+
+
+def test_prep_case_new_gen_preps_clean(checker):
+    for s in ("Εξαιτίας του προβλήματος, αναβλήθηκε η συνεδρίαση.",
+              "Μέσω της τηλεόρασης μεταδόθηκε η είδηση.",
+              "Το σχέδιο είναι υπό έλεγχο.",
+              "Εν συντομία, όλα κρίθηκαν έγκαιρα."):
+        assert [v for v in checker.check(s) if v.rule == "prep_case"] == [], s
