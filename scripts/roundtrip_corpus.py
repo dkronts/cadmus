@@ -62,19 +62,42 @@ def fetch_pairs(limit_pool=20000):
     return pairs
 
 
-def translate(url, model, text):
-    body = json.dumps({
-        "model": model,
-        "messages": [{"role": "user", "content": PROMPT + text}],
-        "temperature": 0.3,
-        "max_tokens": 600,
-        "chat_template_kwargs": {"enable_thinking": False},
-    }).encode()
+def _clean(text):
+    """Strip <think> scaffolding and take the first paragraph."""
+    if "</think>" in text:
+        text = text.split("</think>", 1)[1]
+    text = text.strip().strip('"').strip()
+    return text.split("\n\n")[0].strip()
+
+
+def translate(url, model, text, api="chat"):
+    """One EN->EL call. api='chat' uses /v1/chat/completions (llama.cpp);
+    api='completions' uses /v1/completions for servers whose chat template
+    only emits reasoning (e.g. MTP variants served via Ollama)."""
+    if api == "completions":
+        prompt = ("Translate the following English sentence to Greek. "
+                  "Output ONLY the Greek translation.\n\n"
+                  f"English: {text}\nGreek: <think>\n\n</think>\n\n")
+        body = json.dumps({
+            "model": model, "prompt": prompt,
+            "temperature": 0.3, "max_tokens": 600,
+        }).encode()
+        path, extract = "/completions", lambda ch: ch.get("text")
+    else:
+        body = json.dumps({
+            "model": model,
+            "messages": [{"role": "user", "content": PROMPT + text}],
+            "temperature": 0.3,
+            "max_tokens": 600,
+            "chat_template_kwargs": {"enable_thinking": False},
+        }).encode()
+        path, extract = "/chat/completions", lambda ch: ch["message"].get("content")
     req = urllib.request.Request(
-        url.rstrip("/") + "/chat/completions", data=body,
+        url.rstrip("/") + path, data=body,
         headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        return (json.load(r)["choices"][0]["message"].get("content") or "").strip()
+    with urllib.request.urlopen(req, timeout=300) as r:
+        raw = extract(json.load(r)["choices"][0])
+    return _clean(raw or "")
 
 
 def main():
@@ -83,6 +106,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--url", default="http://127.0.0.1:8000/v1")
     ap.add_argument("--model", default="qwen3.8-flash-next-unsloth-ud-q4_k_xl")
+    ap.add_argument("--api", choices=["chat", "completions"], default="chat")
     ap.add_argument("--seed", type=int, default=7)
     args = ap.parse_args()
 
@@ -92,7 +116,7 @@ def main():
     with open(args.out, "w", encoding="utf-8") as fh:
         for i, (e, g) in enumerate(pairs[:args.n]):
             try:
-                llm = translate(args.url, args.model, e)
+                llm = translate(args.url, args.model, e, api=args.api)
             except Exception as exc:
                 llm = ""
                 print(f"[{i}] error: {exc}")

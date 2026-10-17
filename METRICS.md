@@ -67,19 +67,25 @@ re-measure, don't trust.
 - `na_form` / `verb_valence` recall bounded by treebank coverage
 - relcl rules have no corruption-pool samples (need a longer-sentence pool)
 
-## Round-trip LLM pilot (100 GlobalVoices pairs, Qwen3-8B q4, 2026-10-17)
+## Round-trip LLM pilots (GlobalVoices EN→EL via local models)
 
-- Human-Greek side (real-world clean text): 29 flags / 100 sentences (22
-  sentences flagged) — consistent with the 18% treebank rate
-- LLM-Greek side: 41 flags / 100 sentences (30 flagged); judged **9 true /
-  32 false → 22% flag precision** on machine Greek
-- False-flag causes: parse attachment artifacts 10, tagger feature noise 8,
-  verb_valence frame gaps 6, lexical/transliteration gaps 3, conventions 3,
-  truncated generation 2
-- True detections: 7 orthography (coinages/accent/spacing), 1 agreement
-  (στις δάχτυλα), 1 punctuation — the orthography layer is the workhorse
-- Generator quality: Qwen3-8B q4 grammatically near-clean (~9 real errors
-  per 100 round-trips); richer error corpus needs a weaker model
+**v1: Qwen3-8B q4, 100 pairs** — human-Greek side: 29 flags / 100 sentences;
+LLM side: 41 flags judged **9 true / 32 false (22% flag precision)**;
+generator near-clean (~9 real errors / 100).
+
+**v2: Qwen3 MoE 35B q5 (Ollama, completions API), 200 pairs, same seed** —
+LLM side: 113 flags judged **33 true / 80 false (29% flag precision)**;
+error richness ~16.5 / 100; human-Greek side: 73 known flags / 200.
+
+False-flag causes across both pilots (dominant, in order): parse-attachment
+artifacts (genitive attributes, quantifier chains, antecedent resolution,
+pro-drop subjects), tagger feature noise on indeclinables/rare nouns,
+verb_valence frame gaps (βοηθώ/μιλώ/καλώ + να or obliques), standard-word
+dictionary gaps (hunspell coverage), conventional date genitives and fossil
+Gen preps. True detections are dominated by the orthography layer (coinage
+nonwords, accent errors, script mixing, spacing) with a handful of real
+gender errors (Το τοιχογραφία, Η συμπέρασμά, τον παγκόσμιο τάση, τις
+δάχτυλα) caught by det_noun/adj_noun.
 
 ## Run log
 

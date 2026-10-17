@@ -203,11 +203,16 @@ Newly surfaced gaps:
       grammatically near-clean (~9 real errors / 100 round-trips) — a
       weaker generator or higher temperature is needed for a richer error
       corpus (next: Local LLM 2 on :8001)
-- [ ] FP-class targets surfaced by the pilot (drives the next cycles):
-      adj_noun form-attestation gate (genitive-attribute/quantifier-chain
-      parse artifacts, 5 flags), verb_valence oblique+να frame gaps (6),
-      conventional date genitive + fossil Gen preps (3), rel_agreement
-      antecedent resolution (2), transliteration/lexical gaps (3)
+- [x] Second generator (Qwen3 MoE 35B q5 via Ollama, `/v1/completions` with
+      pre-filled empty `<think>` — its chat template only emits reasoning):
+      200 pairs, same seed (first 100 EN identical to v1) →
+      `tests/data/llm_greek_pilot35b.v1.jsonl`, judged **33 true / 80 false
+      (113 flags)**; ratchet generalized over both fixtures
+- [x] Measured (METRICS): 35B MoE error richness ~16.5 real errors/100
+      (vs 9 for the 8B) and flag precision 29% (vs 22%) — richer corpus,
+      same dominant FP classes; new FP class: standard-word dictionary gaps
+      (~10 flags: δυστοπικό, απάτριδες, Ουκρανός, μαλαισιανό, τουρκμενικό,
+      συλλογικότητα…) — a hunspell-coverage gap, not a rule problem
 
 ## v0.0.19 — Selective two-pass confirmation (`--deep`)
 
