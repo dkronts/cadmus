@@ -171,6 +171,23 @@ class FormLexicon:
                     out.setdefault(k, set()).add(v)
         return out
 
+    def adj_analyses(self, form):
+        """Set of (Case, Gender, Number) triples attested for a form as ADJ.
+
+        Empty when the form has no ADJ attestation at all — an `amod` token
+        without ADJ evidence is a misparsed noun/pronoun, not an adjective."""
+        out = set()
+        for upos, pairs in self.entries.get(form.lower(), ()):
+            if upos == "ADJ":
+                d = dict(pairs)
+                out.add((d.get("Case"), d.get("Gender"), d.get("Number")))
+        return out
+
+    def noun_gen_attested(self, form):
+        """True when the form is attested as a NOUN in the genitive."""
+        return any(upos == "NOUN" and dict(pairs).get("Case") == "Gen"
+                   for upos, pairs in self.entries.get(form.lower(), ()))
+
 
 class VerbForms:
     """Surface-form verb classes from UD-GDT, used to detect a past indicative

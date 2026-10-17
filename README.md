@@ -42,7 +42,7 @@ contradictions; they never require a full parse to succeed.
 | Rule | Catches |
 |---|---|
 | `det_noun` | article–noun agreement; article gender taken from a treebank paradigm table (resists the tagger "repairing" corrupted input), noun gender from lemma attestations; heteroclite-plural exceptions (τα πλευρά); emits the corrected article as a suggestion |
-| `adj_noun` | adjective–noun agreement (only when cases match — case mismatches indicate parse artifacts) |
+| `adj_noun` | adjective–noun agreement (only when cases match — case mismatches indicate parse artifacts); form-attestation guards suppress misparsed nouns (no ADJ attestation), genitive attributes, and tagger feature noise — 0 FP on clean text |
 | `num_noun` | gendered numeral–noun agreement (`τρεις παιδιά` → `τρία παιδιά`). The tagger *repairs* the numeral's gender to match the noun, so the numeral's gender is read from its surface form (`τρεις`/`τέσσερις` → M/F, `τρία`/`τέσσερα` → N) and only the noun's gender is trusted (lemma attestations, as in `adj_noun`) |
 | `subj_verb` | subject–verb number and person, with coordination-aware number licensing |
 | `rel_agreement` | `ο οποίος` ↔ antecedent Gender+Number agreement (Case is free — it comes from the relative clause); the antecedent is located by walking the head chain to the nearest `acl:relcl` verb, so pronouns inside a prepositional phrase (`σύμφωνα με την οποία`) resolve too |

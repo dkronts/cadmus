@@ -189,6 +189,29 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.20 — adj_noun form-attestation guards (0-FP tier)
+
+- [x] Recon first: all 9 treebank adj_noun FPs decomposed — 6 "adjectives"
+      with zero ADJ attestation in entries (misparsed nouns/pronouns:
+      ασθενή, καθενός, φινλανδικά, διμερή + NOUN-only απόφαση), 2
+      genitive-attribute pairs (του Αγίου Aθανασίου, των νέων φαρμάκων)
+- [x] Three guards, all form-attestation (new `FormLexicon.adj_analyses`,
+      `noun_gen_attested`; `form_feats` reused): **G1** an amod with no ADJ
+      attestation is a misparsed noun/unseen form → suppress; **G2** amod
+      attested as NOUN+Gen with a Gen head = genitive attribute → suppress;
+      **G3** noun form attested with the adjective's value → tagger noise →
+      suppress. Recall refinement measured: noun-unseen→suppress-Gender cost
+      the true 'εύκολος πρόσχημα' catch and was dropped (refinement 1 of 2)
+- [x] Measured: **adj_noun 9 → 0 FP** on the 456 clean sweep (joins the
+      0-FP tier); eval pool FP 1→0, recall identical (adj_noun has no pool
+      target); pilot ratchets green with **two documented waivers** (#36
+      'άγνοιας αποφάσεων', #50 'εύκολος πρόσχημα' — both adjective families
+      absent from UD-train, form-level indistinguishable from misparses;
+      same precision-over-recall trade as spelling v0.0.15)
+- [ ] adj_noun recall now rests on train-attested adjectives only; a
+      future suffix-based adjective detector (('-ος/-η/-ο', '-ος/-α/-ικο')
+      paradigms) could restore unseen-adjective detection without the FPs
+
 ## Round-trip LLM-Greek corpus (pilot, 2026-10-17)
 
 - [x] Methodology shipped: `scripts/roundtrip_corpus.py` — OPUS GlobalVoices

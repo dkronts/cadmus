@@ -99,8 +99,37 @@ def _heteroclite_escape(det, noun, det_f, noun_f):
     )
 
 
+def _adj_guards(lex, w, h, k, adj_val, noun_val, noun_case):
+    """Form-attestation guards for adj_noun (precision-first, v0.0.20).
+
+    G1 — the "adjective" has no ADJ attestation (misparsed noun/pronoun or
+    an entirely unseen form): its feats rest on no evidence.
+    G2 — genitive attribute: the amod form is attested as a NOUN in the
+    genitive and the head is genitive ("της μηχανικής τροφίμων") —
+    noun-on-noun attribution, no agreement is required.
+    G3 — the noun's surface form is attested with the adjective's value
+    (gender-syncretic/tagger noise), or (Gender only) is unseen."""
+    adj_analyses = getattr(lex, "adj_analyses", None)
+    if adj_analyses is not None:
+        analyses = adj_analyses(w.text)
+        if not analyses:
+            return True
+        noun_gen = getattr(lex, "noun_gen_attested", None)
+        if (noun_gen is not None and noun_gen(w.text)
+                and noun_case == "Gen"):
+            return True
+    ff = getattr(lex, "form_feats", None)
+    if ff is None:
+        return False
+    attested = ff(h.text).get(k)
+    if not attested:
+        return False
+    return adj_val in attested
+
+
 def adj_noun(sent, by_id, env):
     out = []
+    lex = env.get("lexicon")
     for w in sent.words:
         if w.deprel != "amod":
             continue
@@ -114,6 +143,9 @@ def adj_noun(sent, by_id, env):
         for k in AGREEMENT_FEATURES:
             noun_val = noun_gender if k == "Gender" else hf.get(k)
             if k in f and noun_val is not None and f[k] != noun_val:
+                if lex is not None and _adj_guards(lex, w, h, k, f[k],
+                                                   noun_val, hf.get("Case")):
+                    continue
                 out.append((w, h, f"ADJ-NOUN {k}: '{w.text}'[{f[k]}] vs '{h.text}'[{noun_val}]"))
     return out
 

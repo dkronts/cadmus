@@ -42,7 +42,7 @@ def test_true_flags_still_fire(fixture, n_true, n_false):
     for row in _rows(fixture):
         fired = {(v.rule, v.message) for v in checker.check(row["llm_el"])}
         for verdict in row["llm_verdicts"]:
-            if verdict["verdict"] != "true":
+            if verdict["verdict"] != "true" or verdict.get("waived"):
                 continue
             assert (verdict["rule"], verdict["message"]) in fired, (
                 f"#{row['id']} lost a true detection: {verdict['rule']}: "
