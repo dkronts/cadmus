@@ -29,18 +29,29 @@ def _try_apply_lemma_workaround():
 def load_pipeline(devices="cpu"):
     import stanza
 
-    _try_apply_lemma_workaround()
-    try:
+    def _build():
         return stanza.Pipeline(
             "el",
             processors="tokenize,mwt,pos,lemma,depparse",
             verbose=False,
             devices=devices,
         )
+
+    _try_apply_lemma_workaround()
+    try:
+        return _build()
     except FileNotFoundError as exc:
-        if "conll17" in str(exc):
-            raise RuntimeError(
-                "Stanza Greek lemma model bug: checkpoint references "
-                f"{HORATIO_PATH}. Run scripts/fix_stanza_lemma.sh or see README."
-            ) from exc
-        raise
+        if "conll17" not in str(exc):
+            raise
+        # first build on a fresh machine: stanza has now downloaded the el
+        # resources, so the workaround can find conll17.pt — retry once
+        _try_apply_lemma_workaround()
+        try:
+            return _build()
+        except FileNotFoundError as exc2:
+            if "conll17" in str(exc2):
+                raise RuntimeError(
+                    "Stanza Greek lemma model bug: checkpoint references "
+                    f"{HORATIO_PATH}. Run scripts/fix_stanza_lemma.sh or see README."
+                ) from exc2
+            raise
