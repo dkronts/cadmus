@@ -189,6 +189,23 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.23 — hunspell gap whitelist (measured)
+
+- [x] 11 standard Greek words measured as hunspell el_GR gaps in the
+      round-trip pilots (each judged a false NONWORD against the human
+      reference): αγκάθιο, απάτριδες, δυστοπικό, ιστότοπο, μαλαισιανό,
+      τουρκμενικού, συλλογικοτήτων, σαουδάραβες, σαουδικά, φετβά, ουκρανού
+      → `EXTRA_KNOWN_WORDS` in data.py, consulted by `is_known` after the
+      hunspell variants fail. **Exact measured forms only** — every future
+      entry must carry its own FP evidence; transliterations of foreign
+      terms (Ατγουντ, ταμαζίχτ, σλέχ…) stay unlisted by design
+      (documented residue: the translator may keep the Latin original)
+- [x] Measured: treebank sweep spelling FP unchanged at 22 (none of the
+      whitelist words appear in the UD residue); eval pool identical;
+      pilot ratchets green — the whitelisted NONWORD flags simply die
+      (fewer flags, zero trues touched). Model-free unit test with a
+      monkeypatched empty dictionary
+
 ## v0.0.22 — rel_agreement antecedent-ambiguity guard
 
 - [x] Recon: all 9 treebank FPs were antecedent-attachment errors — pronouns

@@ -12,6 +12,17 @@ GEN_PREPS = {
 # dual-government prepositions (Gen or Acc, both standard) — never flagged
 AMBIGUOUS_PREPS = {"παρά", "κατά", "υπό", "μέχρι"}
 
+# Standard Greek words measured as hunspell el_GR gaps (round-trip LLM
+# pilots v1/v2, judged false positives — see tests/data/llm_greek_pilot*).
+# Exact measured forms only: each new entry must come with its own
+# measured FP evidence. Transliterations of foreign terms (Ατγουντ,
+# ταμαζίχτ...) stay unlisted by design — documented residue.
+EXTRA_KNOWN_WORDS = frozenset({
+    "αγκάθιο", "απάτριδες", "δυστοπικό", "ιστότοπο", "μαλαισιανό",
+    "τουρκμενικού", "συλλογικοτήτων", "σαουδάραβες", "σαουδικά",
+    "φετβά", "ουκρανού",
+})
+
 HETEREOCLITE_PLURALS = {
     "πλευρά": "Neut",
 }

@@ -359,6 +359,18 @@ def test_rel_agreement_plain_mismatch_still_fires():
     assert any("Gender" in f[2] for f in rel_agreement(s, by_id, {"lexicon": lex}))
 
 
+def test_extra_known_words_bypass_hunspell(monkeypatch):
+    class _NoDict:
+        def lookup(self, v):
+            return False
+
+    monkeypatch.setattr(orth_layer, "_dictionary", lambda: _NoDict())
+    monkeypatch.setattr(orth_layer, "_LOOKUP_CACHE", {})
+    for w in ("δυστοπικό", "Δυστοπικό", "Ουκρανού"):
+        assert orth_layer.is_known(w), w
+    assert not orth_layer.is_known("σκανταλοτρυγόνο")
+
+
 def test_negation_delta_with_subjunctive():
     words = [
         FW(1, "να", "AUX"),

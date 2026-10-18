@@ -3,6 +3,7 @@
 import re
 import unicodedata
 
+from .data import EXTRA_KNOWN_WORDS
 from .lexicon import ensure_asset
 
 GREEK_RE = re.compile(r"[\u0370-\u03ff\u1f00-\u1fff]")
@@ -60,6 +61,8 @@ def is_known(token):
         return _LOOKUP_CACHE[key]
     variants = {token, token.lower(), token.lower().capitalize(), token.upper()}
     result = any(d.lookup(v) for v in variants)
+    if not result and token.lower() in EXTRA_KNOWN_WORDS:
+        result = True
     if not result:
         variant = _enclitic_variant(token)
         if variant is not None:
