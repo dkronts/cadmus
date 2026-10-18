@@ -55,3 +55,22 @@ def test_unrelated_failure_propagates(monkeypatch):
         assert "some other" in str(e)
     else:
         raise AssertionError("expected FileNotFoundError")
+
+
+def test_sudo_fallback_creates_parent_dirs(monkeypatch, tmp_path):
+    cache = tmp_path / ".cache" / "stanza" / "resources" / "el" / "pretrain"
+    cache.mkdir(parents=True)
+    (cache / "conll17.pt").write_bytes(b"x")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr(pipeline.os, "symlink",
+                        lambda *a, **kw: (_ for _ in ()).throw(PermissionError("denied")))
+    monkeypatch.setattr(pipeline.os.path, "exists", lambda p: False)
+    import types as _t
+    monkeypatch.setitem(sys.modules, "stanza", _t.SimpleNamespace())
+    calls = []
+    monkeypatch.setattr(pipeline.subprocess, "run",
+                        lambda cmd, check: calls.append(cmd))
+    pipeline._try_apply_lemma_workaround()
+    assert calls and calls[0][0:2] == ["sudo", "-n"]
+    joined = " ".join(calls[0])
+    assert "mkdir -p" in joined and "ln -sf" in joined

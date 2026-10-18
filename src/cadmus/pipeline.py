@@ -1,6 +1,7 @@
 """Stanza pipeline loading with the Greek lemma-model workaround."""
 
 import os
+import shlex
 import subprocess
 
 HORATIO_PATH = "/nlp/scr/horatio/stanza_resources/el/pretrain/conll17.pt"
@@ -20,8 +21,13 @@ def _try_apply_lemma_workaround():
                 os.symlink(real, HORATIO_PATH)
                 return
             except PermissionError:
+                # sudo ln alone does not create parent directories
+                target_dir = shlex.quote(os.path.dirname(HORATIO_PATH))
                 subprocess.run(
-                    ["sudo", "-n", "ln", "-sf", real, HORATIO_PATH], check=False
+                    ["sudo", "-n", "sh", "-c",
+                     f"mkdir -p {target_dir} && "
+                     f"ln -sf {shlex.quote(real)} {shlex.quote(HORATIO_PATH)}"],
+                    check=False,
                 )
                 return
 
