@@ -189,6 +189,27 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## New-capability RECON — three documented rejections (2026-10-18)
+
+Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
+
+- [ ] Verb→preposition government — **REJECTED (no signal)**. 31 unattested
+      verb+prep hits: essentially all artifacts of the 2-hop attachment
+      walk (discontinuous constituents, fossil expressions «ως εκ τούτου»/
+      «επί του παρόντος», in-quote garbage, σ/σ'/σε normalization gaps).
+      Zero true errors among them; the walk over stanza attachments has
+      no precision path
+- [ ] Determiner omission for always-determinered nouns — **REJECTED for
+      this corpus (no signal)**. 5 bare-noun hits in 300: two legitimate
+      bare predicates (after ως/σε), two marginal, ~0-1 true. Round-trip
+      LLM Greek preserves articles. Revisit when an STT corpus exists
+      (speech reduces articles)
+- [ ] Adjacent-token stutter/duplication — **REJECTED (no signal)**. 3
+      duplicates in 200 LLM outputs (2 copied from the human references
+      themselves); both attested classes are grammatical (det before a
+      relative clause, clitic+clitic). Stutters are a raw-decoding/STT
+      artifact, not a translation artifact
+
 ## v0.0.23 — hunspell gap whitelist (measured)
 
 - [x] 11 standard Greek words measured as hunspell el_GR gaps in the

@@ -47,6 +47,16 @@ re-measure, don't trust.
 
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
+- det_noun residue 19/456 is a measured tagger-quality ceiling (Gender
+  gating costs pool recall 58→38%)
+- spelling residue 22/456 is correct detection of imperfect source text
+  (documented REJECTED v0.0.15)
+- prep_case/verb_valence/rel_agreement residues (1/1/2) documented as
+  attachment/sparsity ceilings
+- verb-prep government, determiner omission, stutter detection: REJECTED
+  after pilot RECON (zero true signal — see TODOs 2026-10-18); stutter and
+  article omission become candidates again only with an STT corpus
+
 - rare nouns absent from UD train still FP-prone via the tagger (det_noun
   residue 19/456: unseen-form Gender noise + dual-usage nouns like
   «Υπουργός» — form-level Gender gating measured and REJECTED: pool recall
