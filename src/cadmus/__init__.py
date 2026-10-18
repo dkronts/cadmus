@@ -1,6 +1,6 @@
 """Cadmus — Greek grammar and syntax checker for local LLM output."""
 
-__version__ = "0.0.23"
+__version__ = "0.0.24"
 
 from .checker import CadmusChecker, Violation
 

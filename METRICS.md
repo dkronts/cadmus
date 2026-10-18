@@ -114,3 +114,4 @@ perf if re-measured.
 | v0.0.21 | 2026-10 | verb_valence: argument-skeleton relaxation (ccomp/xcomp→clause, obj/iobj→objlike, expl dropped) | 128 | identical | verb_valence 11→1 per 456 clean (residue: sparse-treebank οφείλω+obj) | — |
 | v0.0.22 | 2026-10 | rel_agreement: antecedent-ambiguity guard (agr_attested, NP ancestors, genitive possessors, foreign names) | 131 | identical (no pool target; probes fire) | rel_agreement 9→2 per 456 clean (νόσος = likely true source error kept) | — |
 | v0.0.23 | 2026-10 | spelling: EXTRA_KNOWN_WORDS hunspell-gap whitelist (11 measured words) | 124 | identical | treebank 22 unchanged; pilot LLM-Greek NONWORD FPs −11 (ratchet green) | — |
+| v0.0.24 | 2026-10 | suggestions: rel_agreement «ο οποίος», copula_pred «γιατρός», ranked spelling primaries | 136 | identical | identical (messages unchanged; only suggestion fields gained) | — |

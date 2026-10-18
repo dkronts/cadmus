@@ -58,9 +58,14 @@ def copula_pred(sent, by_id, env):
                 sg = feats(subj).get("Gender")
                 if sg and pf.get("Gender") and sg != pf["Gender"]:
                     continue  # predicate gender contradicts its subject -> tagger mis-tagged, skip
-            out.append((pred, w,
-                        f"COPULA-PRED: '{pred.text}' is accusative, but a copula "
-                        f"predicate must be nominative"))
+            msg = (f"COPULA-PRED: '{pred.text}' is accusative, but a copula "
+                   f"predicate must be nominative")
+            if pf.get("Number") == "Sing" and _deaccent(pred.text.lower()).endswith("ο"):
+                # masc -ο → nominative -ος (γιατρό → γιατρός, πρόεδρο → πρόεδρος)
+                fixed = pred.text + "ς"
+                out.append((pred, w, msg, f"«{fixed}»"))
+            else:
+                out.append((pred, w, msg))
     return out
 
 

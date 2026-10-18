@@ -210,6 +210,22 @@ Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
       relative clause, clitic+clitic). Stutters are a raw-decoding/STT
       artifact, not a translation artifact
 
+## v0.0.24 — Correction suggestions for rel_agreement, copula_pred; ranked spelling suggestions
+
+- [x] `rel_agreement` now emits the corrected relative pronoun («ο οποίος»)
+      from a new `REL_PRONOUNS` paradigm table in data.py — the antecedent's
+      Gender+Number in the pronoun's own (free) Case
+- [x] `copula_pred` emits «γιατρός»-style nominatives for the masc -ο
+      singular class (γιατρό→γιατρός, πρόεδρο→πρόεδρος); plural -ους stays
+      suggestion-less (no safe surface transform)
+- [x] `spelling` NONWORD suggestions are ranked: candidates attested in the
+      UD-train form lexicon outrank arbitrary hunspell guesses (the message
+      keeps the raw order; only the primary `suggestion` field is ranked)
+- [x] Backlog #2 scope complete — every rule except adj_noun/subj_verb/
+      prep_case/verb_valence/negation now carries a suggestion where a safe
+      surface transform exists. Unit + integration tests for all three
+      emitters; pilot ratchets green (messages unchanged by design)
+
 ## v0.0.23 — hunspell gap whitelist (measured)
 
 - [x] 11 standard Greek words measured as hunspell el_GR gaps in the

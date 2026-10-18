@@ -1,8 +1,8 @@
 """Agreement rules: determiner-noun, adjective-noun, subject-verb, copula predicate."""
 
 from ..data import (
-    DEFINITE_ARTICLES, HETEREOCLITE_PLURALS, conj_closure, feats,
-    has_own_determiner,
+    DEFINITE_ARTICLES, HETEREOCLITE_PLURALS, REL_PRONOUNS, conj_closure,
+    feats, has_own_determiner,
 )
 from ..orthography import strip_accents
 
@@ -295,6 +295,11 @@ def rel_agreement(sent, by_id, env):
             if wv and av and wv != av:
                 if lex is not None and _antecedent_ambivalent(lex, ant, by_id, f):
                     continue
-                out.append((w, ant,
-                            f"REL-ANT {k}: relative pronoun '{w.text}'[{wv}] vs antecedent '{ant.text}'[{av}]"))
+                # corrected pronoun: the antecedent's Gender+Number in the
+                # pronoun's own (free) Case
+                target = REL_PRONOUNS.get(
+                    (ant_gender or av, af.get("Number") or av, f.get("Case")))
+                msg = (f"REL-ANT {k}: relative pronoun '{w.text}'[{wv}] "
+                       f"vs antecedent '{ant.text}'[{av}]")
+                out.append((w, ant, msg, f"«{target}»") if target else (w, ant, msg))
     return out

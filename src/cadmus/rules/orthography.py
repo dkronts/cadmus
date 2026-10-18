@@ -58,9 +58,14 @@ def spelling(sent, by_id, env):
             out.append((w, w, f"ACCENT: '{w.text}' → '{suggestions[0]}' (accent/diacritic error)",
                         suggestions[0]))
         elif suggestions:
+            # rank candidates attested in the UD-train form lexicon first —
+            # a real attested Greek form beats an arbitrary hunspell guess
+            lex = env.get("lexicon")
+            ranked = sorted(suggestions,
+                            key=lambda s: not (lex is not None and s.lower() in lex.entries))
             out.append((w, w,
                         f"NONWORD: '{w.text}' (unknown word; suggestions: {', '.join(suggestions)})",
-                        suggestions[0]))
+                        ranked[0]))
         else:
             out.append((w, w, f"NONWORD: '{w.text}' (unknown word)"))
     return out

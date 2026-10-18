@@ -36,6 +36,24 @@ DEFINITE_ARTICLES = {
     ("Neut", "Plur", "Nom"): "τα", ("Neut", "Plur", "Gen"): "των", ("Neut", "Plur", "Acc"): "τα",
 }
 
+# 'ο οποίος' paradigm: (Gender, Number, Case) -> full pronoun form. Case is
+# free (it belongs to the relative clause); Gender+Number must match the
+# antecedent — used to emit the corrected relative pronoun as a suggestion.
+REL_PRONOUNS = {
+    ("Masc", "Sing", "Nom"): "ο οποίος", ("Masc", "Sing", "Gen"): "του οποίου",
+    ("Masc", "Sing", "Acc"): "τον οποίο",
+    ("Fem", "Sing", "Nom"): "η οποία", ("Fem", "Sing", "Gen"): "της οποίας",
+    ("Fem", "Sing", "Acc"): "την οποία",
+    ("Neut", "Sing", "Nom"): "το οποίο", ("Neut", "Sing", "Gen"): "του οποίου",
+    ("Neut", "Sing", "Acc"): "το οποίο",
+    ("Masc", "Plur", "Nom"): "οι οποίοι", ("Masc", "Plur", "Gen"): "των οποίων",
+    ("Masc", "Plur", "Acc"): "τους οποίους",
+    ("Fem", "Plur", "Nom"): "οι οποίες", ("Fem", "Plur", "Gen"): "των οποίων",
+    ("Fem", "Plur", "Acc"): "τις οποίες",
+    ("Neut", "Plur", "Nom"): "τα οποία", ("Neut", "Plur", "Gen"): "των οποίων",
+    ("Neut", "Plur", "Acc"): "τα οποία",
+}
+
 RULE_SEVERITY = {
     "spelling": "medium",
     "typography": "low",

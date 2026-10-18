@@ -356,7 +356,33 @@ def test_rel_agreement_plain_mismatch_still_fires():
                          "Case=Nom|Gender=Masc|Number=Sing")
     s, by_id = sent(words)
     lex = FakeLexicon(form_feats={"γιατρός": {"Gender": {"Masc"}, "Number": {"Sing"}}})
-    assert any("Gender" in f[2] for f in rel_agreement(s, by_id, {"lexicon": lex}))
+    flags = rel_agreement(s, by_id, {"lexicon": lex})
+    assert any("Gender" in f[2] for f in flags)
+    assert all(f[3] == "«ο οποίος»" for f in flags if len(f) > 3)
+
+
+def test_rel_agreement_number_mismatch_suggestion():
+    words = [
+        FW(1, "γιατροί", "NOUN", "Case=Nom|Gender=Masc|Number=Plur", lemma="γιατρός", head=0, deprel="nsubj"),
+        FW(2, "οι", "DET", "Case=Nom|Gender=Masc|Number=Sing", head=3, deprel="det"),
+        FW(3, "οποία", "PRON", "Case=Nom|Gender=Fem|Number=Sing|PronType=Rel", lemma="οποίος", head=4, deprel="nsubj"),
+        FW(4, "έρχονται", "VERB", "Number=Plur|Person=3", head=1, deprel="acl:relcl"),
+    ]
+    s, by_id = sent(words)
+    flags = rel_agreement(s, by_id, {"lexicon": FakeLexicon()})
+    assert any(f[3] == "«οι οποίοι»" for f in flags if len(f) > 3)
+
+
+def test_copula_pred_suggestion():
+    from cadmus.rules.morphology import copula_pred
+
+    words = [
+        FW(1, "Είναι", "AUX", lemma="είμαι", head=2, deprel="cop"),
+        FW(2, "γιατρό", "NOUN", "Case=Nom|Gender=Masc|Number=Sing", lemma="γιατρός", head=0, deprel="root"),
+    ]
+    s, by_id = sent(words)
+    flags = copula_pred(s, by_id, {})
+    assert flags and flags[0][3] == "«γιατρός»"
 
 
 def test_extra_known_words_bypass_hunspell(monkeypatch):

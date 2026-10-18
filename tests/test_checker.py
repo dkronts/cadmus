@@ -61,6 +61,17 @@ def test_rel_agreement_flagged(checker):
                for v in checker.check("Οι γιατροί τα οποία πραγματοποίησαν την έκτρωση φεύγουν."))
 
 
+def test_rel_agreement_suggestion(checker):
+    vs = [v for v in checker.check("Ο γιατρός η οποία πραγματοποίησε την έκτρωση φεύγει.")
+          if v.rule == "rel_agreement"]
+    assert vs and vs[0].suggestion.strip("«»") == "ο οποίος"
+
+
+def test_copula_pred_suggestion(checker):
+    vs = [v for v in checker.check("Είναι γιατρό.") if v.rule == "copula_pred"]
+    assert vs and vs[0].suggestion.strip("«»") == "γιατρός"
+
+
 def test_copula_pred_flagged(checker):
     assert any(v.rule == "copula_pred" for v in checker.check("Είναι γιατρό."))
     assert any(v.rule == "copula_pred" for v in checker.check("Θα γίνεις πρόεδρο."))
