@@ -189,6 +189,27 @@ Newly surfaced gaps:
       (`tail -f server.log | cadmus watch`). Pure `stream.iter_checked` helper
       (injected checker) keeps it model-free and CI-tested
 
+## v0.0.22 — rel_agreement antecedent-ambiguity guard
+
+- [x] Recon: all 9 treebank FPs were antecedent-attachment errors — pronouns
+      tracking governing nouns (ασθενειών-ειδους, μια-παραλίες), genitive
+      possessors (βοήθεια των Δυτικών, οι οποίοι), apposition chains,
+      attached foreign names (έκθεση Watson)
+- [x] `_antecedent_ambivalent`: fire only when no plausible alternative
+      exists — candidates = the antecedent, NP ancestors up to two hops
+      (nmod/obl/appos/amod/acl), and genitive possessor children; a
+      candidate explains the pronoun when attested (any UPOS, new
+      `FormLexicon.agr_attested` — covers DET 'μια'), by its own tagger
+      feats, or (genitive possessors) by Number alone (their Gender is the
+      documented rare-name tagger noise); flat/appos foreign or PROPN
+      children suppress outright. A substring bug ("Gen" matching
+      "Gender") briefly over-suppressed and was caught by the unit tests
+- [x] Measured: rel_agreement **9 → 2 FP** per 456 clean (residues:
+      νόσος/ο οποίος — a likely genuine UD source error we *want* to flag;
+      διαφθορά/οποίες — deep-PP attachment beyond the two-hop window);
+      eval pool identical; both pilot ratchets green, zero pilot trues
+      touched (all 4 rel pilot FPs die). 4 new model-free unit tests
+
 ## v0.0.21 — verb_valence argument-skeleton relaxation
 
 - [x] Recon: all 11 treebank FPs decomposed — 10 differed from attested

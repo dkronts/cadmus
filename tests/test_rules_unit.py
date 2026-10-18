@@ -297,6 +297,68 @@ def test_verb_valence_skeleton_relaxation():
     assert frames.unexpected(sleeper, [o]) is not None
 
 
+def _relcl_words(pron_feats, ant_feats, ant_lemma="γιατρός"):
+    return [
+        FW(1, "Ο", "DET", "Case=Nom|Gender=Masc|Number=Sing", head=2, deprel="det"),
+        FW(2, ant_lemma.title(), "NOUN", ant_feats, lemma=ant_lemma, head=3, deprel="nsubj"),
+        FW(3, "μιλάει", "VERB", "Number=Sing|Person=3", head=0, deprel="root"),
+        FW(4, "η", "DET", "Case=Nom|Gender=Fem|Number=Sing", head=5, deprel="det"),
+        FW(5, "οποία", "PRON", pron_feats, lemma="οποίος", head=6, deprel="nsubj"),
+        FW(6, "έρχεται", "VERB", "Number=Sing|Person=3", head=2, deprel="acl:relcl"),
+    ]
+
+
+def test_rel_agreement_governor_match_suppressed():
+    # the pronoun tracks the governing noun (ασθενειών), not the attribute
+    words = _relcl_words("Case=Nom|Gender=Fem|Number=Plur|PronType=Rel",
+                         "Case=Gen|Gender=Neut|Number=Sing", ant_lemma="είδος")
+    words[1].head = 7
+    words[1].deprel = "nmod"
+    words.append(FW(7, "ασθενειών", "NOUN", "Case=Gen|Gender=Fem|Number=Plur",
+                    lemma="ασθένεια", head=0, deprel="root"))
+    s, by_id = sent(words)
+    lex = FakeLexicon(form_feats={"ασθενειών": {"Gender": {"Fem"}, "Number": {"Plur"}}})
+    assert rel_agreement(s, by_id, {"lexicon": lex}) == []
+
+
+def test_rel_agreement_genitive_child_suppressed():
+    # 'της βοήθειας των Δυτικών, οι οποίοι' — pronoun refers to Δυτικών;
+    # the tagger misgenders the rare name (Fem), so genitive possessors
+    # match on Number alone
+    words = [
+        FW(1, "βοήθεια", "NOUN", "Case=Acc|Gender=Fem|Number=Sing", lemma="βοήθεια", head=0, deprel="obj"),
+        FW(2, "Δυτικών", "ADJ", "Case=Gen|Gender=Fem|Number=Plur", lemma="δύτικός", head=1, deprel="amod"),
+        FW(3, "οι", "DET", "Case=Nom|Gender=Masc|Number=Plur", head=4, deprel="det"),
+        FW(4, "οποίοι", "PRON", "Case=Nom|Gender=Masc|Number=Plur|PronType=Rel", lemma="οποίος", head=5, deprel="nsubj"),
+        FW(5, "έστειλαν", "VERB", "Number=Plur|Person=3", head=1, deprel="acl:relcl"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(form_feats={})
+    assert rel_agreement(s, by_id, {"lexicon": lex}) == []
+
+
+def test_rel_agreement_foreign_name_suppressed():
+    # 'της έκθεσης Watson, ο οποίος' — pronoun refers to the person
+    words = [
+        FW(1, "έκθεσης", "NOUN", "Case=Gen|Gender=Fem|Number=Sing", lemma="έκθεση", head=0, deprel="nmod"),
+        FW(2, "Watson", "PROPN", head=1, deprel="flat"),
+        FW(3, "ο", "DET", "Case=Nom|Gender=Masc|Number=Sing", head=4, deprel="det"),
+        FW(4, "οποίος", "PRON", "Case=Nom|Gender=Masc|Number=Sing|PronType=Rel", lemma="οποίος", head=5, deprel="nsubj"),
+        FW(5, "ήταν", "VERB", "Number=Sing|Person=3", head=1, deprel="acl:relcl"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(form_feats={"έκθεσης": {"Gender": {"Fem"}, "Number": {"Sing"}}})
+    assert rel_agreement(s, by_id, {"lexicon": lex}) == []
+
+
+def test_rel_agreement_plain_mismatch_still_fires():
+    words = _relcl_words("Case=Nom|Gender=Fem|Number=Sing|PronType=Rel",
+                         "Case=Nom|Gender=Masc|Number=Sing")
+    s, by_id = sent(words)
+    lex = FakeLexicon(form_feats={"γιατρός": {"Gender": {"Masc"}, "Number": {"Sing"}}})
+    assert any("Gender" in f[2] for f in rel_agreement(s, by_id, {"lexicon": lex}))
+
+
 def test_negation_delta_with_subjunctive():
     words = [
         FW(1, "να", "AUX"),

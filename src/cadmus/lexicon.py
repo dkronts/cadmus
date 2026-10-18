@@ -171,6 +171,16 @@ class FormLexicon:
                     out.setdefault(k, set()).add(v)
         return out
 
+    def agr_attested(self, form, gender, number):
+        """True when the form is attested (any UPOS with agreement feats)
+        with both this Gender and Number — used for antecedent-ambiguity
+        checks where the candidate may be a DET/PRON ('μια', 'του οποίου')."""
+        for upos, pairs in self.entries.get(form.lower(), ()):
+            d = dict(pairs)
+            if d.get("Gender") == gender and d.get("Number") == number:
+                return True
+        return False
+
     def adj_analyses(self, form):
         """Set of (Case, Gender, Number) triples attested for a form as ADJ.
 

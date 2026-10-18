@@ -102,3 +102,4 @@ perf if re-measured.
 | v0.0.19 | 2026-10 | selective two-pass suggestion confirmation (`--deep`, `Violation.confirmed`) | 118 | identical (deep is opt-in; default path unchanged) | identical | default path 34 sent/s batch (v0.0.16) |
 | v0.0.20 | 2026-10 | adj_noun: form-attestation guards (adj_analyses, noun_gen_attested, form_feats) | 126 | identical (no pool target; 2 pilot trues waived with docs) | adj_noun 9→0 per 456 clean — joins the 0-FP tier | — |
 | v0.0.21 | 2026-10 | verb_valence: argument-skeleton relaxation (ccomp/xcomp→clause, obj/iobj→objlike, expl dropped) | 128 | identical | verb_valence 11→1 per 456 clean (residue: sparse-treebank οφείλω+obj) | — |
+| v0.0.22 | 2026-10 | rel_agreement: antecedent-ambiguity guard (agr_attested, NP ancestors, genitive possessors, foreign names) | 131 | identical (no pool target; probes fire) | rel_agreement 9→2 per 456 clean (νόσος = likely true source error kept) | — |

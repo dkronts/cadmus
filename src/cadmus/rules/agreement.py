@@ -210,9 +210,73 @@ def _relcl_ancestor(w, by_id):
     return None
 
 
+_NP_EDGES = {"nmod", "obl", "appos", "amod", "acl"}
+
+
+def _is_foreign(text):
+    return any(ch.isascii() and ch.isalpha() for ch in text)
+
+
+def _matches_pronoun(cand, f, number_only=False):
+    cf = feats(cand)
+    if number_only:
+        return cf.get("Number") == f.get("Number")
+    return (cf.get("Gender") == f.get("Gender")
+            and cf.get("Number") == f.get("Number"))
+
+
+def _antecedent_ambivalent(lex, ant, by_id, f):
+    """True when the resolved antecedent is not the only plausible one.
+
+    Attachment noise, not agreement error: (a) the antecedent's own form is
+    attested with the pronoun's Gender+Number (tagger feats noise); (b) an
+    NP ancestor up to two hops (nmod/obl/appos/amod/acl) or a genitive
+    possessor child explains the pronoun — by form attestation (any UPOS,
+    'μια', 'των Δυτικών') or by its own tagger feats — the pronoun tracks
+    the governing/possessor noun (genitive possessors match on Number
+    alone: their Gender is the documented rare-name tagger noise); (c) a
+    foreign/PROPN name is attached to the antecedent (the pronoun may
+    refer to the person, not the thing)."""
+    ff = getattr(lex, "form_feats", None)
+    agr = getattr(lex, "agr_attested", None)
+    if ff is None and agr is None:
+        return False
+    g, n = f.get("Gender"), f.get("Number")
+    candidates = [(ant, False)]
+    cur = ant
+    for _ in range(2):
+        if cur.deprel not in _NP_EDGES:
+            break
+        cur = by_id.get(cur.head)
+        if cur is None:
+            break
+        candidates.append((cur, False))
+    for x in by_id.values():
+        if x.head != ant.id:
+            continue
+        if (feats(x).get("Case") == "Gen"
+                and x.upos in ("NOUN", "PROPN", "ADJ", "DET", "PRON")):
+            candidates.append((x, True))
+        if x.deprel in ("flat", "appos") and (x.upos == "PROPN" or _is_foreign(x.text)):
+            return True
+    for cand, number_only in candidates:
+        if _matches_pronoun(cand, f, number_only=number_only):
+            return True
+        if number_only:
+            continue
+        if agr is not None and g and n and agr(cand.text, g, n):
+            return True
+        if ff is not None:
+            d = ff(cand.text)
+            if g in d.get("Gender", ()) and n in d.get("Number", ()):
+                return True
+    return False
+
+
 def rel_agreement(sent, by_id, env):
     """'ο οποίος' must agree with its antecedent in Gender+Number (Case is free)."""
     out = []
+    lex = env.get("lexicon")
     for w in sent.words:
         f = feats(w)
         if f.get("PronType") != "Rel" or (w.lemma or "").lower() != "οποίος":
@@ -229,6 +293,8 @@ def rel_agreement(sent, by_id, env):
             wv = f.get(k)
             av = ant_gender if k == "Gender" else af.get(k)
             if wv and av and wv != av:
+                if lex is not None and _antecedent_ambivalent(lex, ant, by_id, f):
+                    continue
                 out.append((w, ant,
                             f"REL-ANT {k}: relative pronoun '{w.text}'[{wv}] vs antecedent '{ant.text}'[{av}]"))
     return out
