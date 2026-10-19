@@ -59,6 +59,50 @@ def load_clean_sentences(limit):
     return filtered
 
 
+def load_sweep_sentences(path=None):
+    """Every ``# text = `` line of the conllu file, in file order.
+
+    No length/Greek-ratio/@/# filtering and no limit: this is the full
+    456-sentence clean-sweep population behind the RECON numbers."""
+    path = path or ensure_asset("el_gdt-ud-test.conllu")
+    out = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if line.startswith("# text = "):
+                out.append(line[len("# text = "):])
+    return out
+
+
+def run_sweep(checker=None, verbose=False):
+    """Full clean sweep: all ``# text =`` sentences through check_batch."""
+    checker = checker or CadmusChecker()
+    sentences = load_sweep_sentences()
+
+    counts = defaultdict(int)
+    samples = defaultdict(list)
+    for s, violations in zip(sentences, checker.check_batch(sentences)):
+        for v in violations:
+            counts[v.rule] += 1
+            if len(samples[v.rule]) < 3:
+                samples[v.rule].append((s[:60], v.message[:80]))
+            if verbose:
+                print(f"  [{v.rule}] {s[:70]} -> {v.message[:80]}")
+
+    lines = []
+    lines.append(f"sweep: {len(sentences)} sentences, full clean sweep (all # text lines)")
+    lines.append("")
+    lines.append("violations on clean text:")
+    if not counts:
+        lines.append("  none")
+    for rule in sorted(counts):
+        lines.append(f"  {rule:12} {counts[rule]:3}  e.g. {samples[rule][0][1]}")
+    damp = checker._damp_stats
+    lines.append("")
+    lines.append(f"dampener: {damp['suppressed']} flags suppressed by lexicon, {damp['fired']} fired")
+    return "\n".join(lines)
+
+
 def run_eval(n=100, seed=42, verbose=False):
     checker = CadmusChecker()
     sentences = load_clean_sentences(n)
