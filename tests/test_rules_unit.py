@@ -700,6 +700,17 @@ def test_dampened_generic_same_id_not_dampened():
     assert ck._dampened(w, other) is True
 
 
+def test_dampened_generic_head_none_not_dampened():
+    # generic tail (rule=None): a None head must not dampen (h-is-None guard
+    # at checker.py:202), but a suspect w still short-circuits True via
+    # is_suspect(w) at checker.py:200 before that guard
+    w = FW(1, "σκύλου", "NOUN", lemma="σκύλος")
+    ck = _damp_checker(FakeLexicon())
+    assert ck._dampened(w, None) is False
+    ck2 = _damp_checker(FakeLexicon(suspect_ids={1}))
+    assert ck2._dampened(w, None) is True
+
+
 def _stats_checker(lex):
     # model-free and asset-free: the lexicon/propn/verbforms overrides keep
     # env['lexicon'] populated at checker.py:153-154 without loading assets
