@@ -309,31 +309,6 @@ Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
       future suffix-based adjective detector (('-ος/-η/-ο', '-ος/-α/-ικο')
       paradigms) could restore unseen-adjective detection without the FPs
 
-## Round-trip LLM-Greek corpus (pilot, 2026-10-17)
-
-- [x] Methodology shipped: `scripts/roundtrip_corpus.py` — OPUS GlobalVoices
-      EN-EL pairs → local Qwen3-8B (q4) translates EN→EL (temp 0.3); 100-pair
-      pilot generated and **hand-judged** (assistant-as-judge) against the
-      human reference; corpus + verdicts committed as
-      `tests/data/llm_greek_pilot.v1.jsonl` with a regression ratchet
-      (`tests/test_llm_pilot.py`): the 9 TRUE detections must keep firing,
-      no new flags beyond the judged-false/known lists on either side
-- [x] Measured (METRICS): human-Greek FP 29/100 sentences; LLM-Greek flags
-      41/100 with **9 true / 32 false (22% flag precision)**; Qwen3-8B q4 is
-      grammatically near-clean (~9 real errors / 100 round-trips) — a
-      weaker generator or higher temperature is needed for a richer error
-      corpus (next: Local LLM 2 on :8001)
-- [x] Second generator (Qwen3 MoE 35B q5 via Ollama, `/v1/completions` with
-      pre-filled empty `<think>` — its chat template only emits reasoning):
-      200 pairs, same seed (first 100 EN identical to v1) →
-      `tests/data/llm_greek_pilot35b.v1.jsonl`, judged **33 true / 80 false
-      (113 flags)**; ratchet generalized over both fixtures
-- [x] Measured (METRICS): 35B MoE error richness ~16.5 real errors/100
-      (vs 9 for the 8B) and flag precision 29% (vs 22%) — richer corpus,
-      same dominant FP classes; new FP class: standard-word dictionary gaps
-      (~10 flags: δυστοπικό, απάτριδες, Ουκρανός, μαλαισιανό, τουρκμενικό,
-      συλλογικότητα…) — a hunspell-coverage gap, not a rule problem
-
 ## v0.0.19 — Selective two-pass confirmation (`--deep`)
 
 - [x] `check(..., deep=True)` / `cadmus check --deep`: every violation that
