@@ -1,0 +1,33 @@
+# Cadmus — autonomous development pipeline configuration.
+# The graph implementation lives in ~/opencode-development-pipeline; this file
+# is fully portable (no machine-specific paths).
+version: 1
+projectId: cadmus
+objective: >
+  Incrementally improve cadmus, a Greek grammar/syntax detection layer, through
+  small, verified increments. Hard invariants, never violated: (1) 0-FP
+  correctness tier — any rule change must keep zero false positives on clean
+  text, measured end-to-end through the stanza analyzer (corpora live under
+  ~/.cache/cadmus); a rejection documented with evidence in TODOs.md is a
+  first-class, valued outcome. (2) Measure before build; never trust
+  unmeasured claims. (3) Detection only — never rewrite user text; suggestions
+  are advisory strings. (4) Never mention the maintainer's personal identity,
+  real name, or academic history in any artifact, doc, or commit. Read
+  TODOs.md (roadmap + evidence log) and METRICS.md first; prefer the biggest
+  measured gap; add tests (tests/fakes.py for rule logic, tests/test_checker.py
+  for integration) with every change; record every increment or rejection in
+  TODOs.md and METRICS.md. Bump the version (pyproject.toml +
+  src/cadmus/__init__.py) for user-visible changes. Leave pending and stop with
+  a precise question instead of deciding alone: new heavy dependencies or
+  multi-GB downloads, publishing to PyPI/tags/releases, breaking public API
+  changes, style-tier scope, anything spending money.
+testCommand: .venv/bin/python -m pytest -q
+lintCommand: ""
+typecheckCommand: ""
+maxIterations: 0
+retryLimit: 2
+repeatedFailureLimit: 2
+forceReplanAfterFailures: 2
+autoCommit: true
+autoPush: true
+testTimeoutMs: 600000
