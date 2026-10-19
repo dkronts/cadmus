@@ -1,4 +1,4 @@
-from fakes import FW, FakeLexicon, FakeNLP, sent
+from fakes import FW, FS, FakeDoc, FakeLexicon, FakeNLP, sent
 
 from cadmus import CadmusChecker
 from cadmus import orthography as orth_layer
@@ -698,3 +698,45 @@ def test_dampened_generic_same_id_not_dampened():
     ck = _damp_checker(_IdentitySuspectLexicon([h, other]))
     assert ck._dampened(w, h) is False
     assert ck._dampened(w, other) is True
+
+
+def _stats_checker(lex):
+    # model-free and asset-free: the lexicon/propn/verbforms overrides keep
+    # env['lexicon'] populated at checker.py:153-154 without loading assets
+    ck = CadmusChecker(nlp=FakeNLP(), use_lexicon=True)
+    ck.lexicon = lambda: lex
+    ck.propn = lambda: {}
+    ck.verbforms = lambda: {}
+    return ck
+
+
+def _det_noun_stats_doc():
+    # det+noun pair whose Gender mismatch the det_noun rule flags; the DET
+    # carries start/end so _offsets (checker.py:205-213) returns before
+    # touching sent.tokens, which FS lacks
+    words = [
+        FW(1, "τους", "DET", "Case=Acc|Gender=Masc|Number=Plur", head=2,
+           deprel="det", start_char=0, end_char=4),
+        FW(2, "πρόποδες", "NOUN", "Case=Acc|Gender=Fem|Number=Plur", lemma="πρόποδη"),
+    ]
+    fs = FS(words)
+    doc = FakeDoc(fs.text)
+    doc.sentences = [fs]
+    return fs.text, doc
+
+
+def test_analyze_det_noun_head_not_suspect_fires_and_counts():
+    text, doc = _det_noun_stats_doc()
+    ck = _stats_checker(FakeLexicon(det_genders={"τους": "Masc"}, form_feats={}))
+    violations = ck._analyze(text, doc)
+    assert len(violations) == 1
+    assert violations[0].rule == "det_noun"
+    assert ck._damp_stats == {"suppressed": 0, "fired": 1}
+
+
+def test_analyze_det_noun_suspect_head_dampened_and_counts():
+    text, doc = _det_noun_stats_doc()
+    ck = _stats_checker(FakeLexicon(det_genders={"τους": "Masc"}, suspect_ids={2}))
+    violations = ck._analyze(text, doc)
+    assert violations == []
+    assert ck._damp_stats == {"suppressed": 1, "fired": 0}
