@@ -468,9 +468,8 @@ Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
 ## Brainstorm — next steps
 
 Fill this section only when "Newly surfaced gaps" and the backlog are both
-exhausted (loop step 9 in `AGENTS.md`): propose concrete candidates with
-value / effort / risk / how to measure, then work the autonomous ones and
-ASK USER for any that hit the decision matrix.
+exhausted: propose concrete candidates with
+value / effort / risk / how to measure.
 
 ## Done
 

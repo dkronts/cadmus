@@ -1,6 +1,6 @@
 # Cadmus — metrics log
 
-Progress + error-distribution ledger for the loop (see `AGENTS.md`).
+Progress + error-distribution ledger for the development loop.
 Append one run-log entry per shipped increment; keep the distributions
 current so SELECT stays data-driven. Numbers are measurements, not claims —
 re-measure, don't trust.
