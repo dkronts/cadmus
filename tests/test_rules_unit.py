@@ -666,3 +666,35 @@ def test_dampened_upos_guard_keeps_generic_path():
     w = FW(1, "του", "NOUN")
     h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
     assert ck._dampened(w, h, rule="det_noun") is True
+
+
+def test_dampened_lexicon_none_returns_false():
+    # use_lexicon=False makes lexicon() return None (checker.py:49-55), so no
+    # dampening happens even for a pair a suspect-marked lexicon would dampen
+    w = FW(1, "του", "DET")
+    h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    assert _damp_checker(FakeLexicon(suspect_ids={1}))._dampened(w, h) is True
+    ck = CadmusChecker(nlp=FakeNLP(), use_lexicon=False)
+    assert ck._dampened(w, h, rule="det_noun") is False
+    assert ck._dampened(w, h) is False
+
+
+class _IdentitySuspectLexicon(FakeLexicon):
+    # FakeLexicon keys suspects by id, which cannot express a suspect head
+    # sharing the checked word's id; key by object identity to pin the
+    # h.id != w.id guard at checker.py:202
+    def __init__(self, suspects=()):
+        super().__init__()
+        self.suspects = list(suspects)
+
+    def is_suspect(self, word):
+        return any(word is s for s in self.suspects)
+
+
+def test_dampened_generic_same_id_not_dampened():
+    w = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    other = FW(3, "σκύλου", "NOUN", lemma="σκύλος")
+    ck = _damp_checker(_IdentitySuspectLexicon([h, other]))
+    assert ck._dampened(w, h) is False
+    assert ck._dampened(w, other) is True
