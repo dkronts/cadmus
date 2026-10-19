@@ -40,6 +40,20 @@ def test_form_lexicon_build(tmp_path):
     assert not lex.is_suspect(_Word("φοο", "NOUN", "Case=Acc"))
 
 
+def test_form_gender_reads_noun_propn_entries(tmp_path):
+    lex = FormLexicon.build(_write(tmp_path))
+    assert lex.form_gender("σκύλος") == {"Masc"}
+    assert lex.form_gender("Σκύλος") == {"Masc"}
+    assert lex.form_gender("φαγητό") == {"Neut"}
+    assert lex.form_gender("αόρατο") == set()
+    assert lex.form_gender("το") == set()  # DET attestation carries no noun gender
+    dual = FormLexicon({"ξ": {("NOUN", (("Case", "Nom"), ("Gender", "Masc"))),
+                              ("PROPN", (("Gender", "Fem"),)),
+                              ("ADJ", (("Gender", "Neut"),)),
+                              ("NOUN", (("Case", "Gen"), ("Number", "Sing")))}})
+    assert dual.form_gender("ξ") == {"Masc", "Fem"}
+
+
 def test_verb_frames_build(tmp_path):
     frames = VerbFrames.build(_write(tmp_path))
     counter = frames.counters["τρώω"]

@@ -41,13 +41,14 @@ Newly surfaced gaps:
       `noun_genders`; the live firing paths are (a) nouns whose surface form
       is unseen in UD-train (never suspect → the rule falls back to tagger
       Gender via `resolve_gender`) and (b) suspect nouns whose lemma gender
-      IS resolved. Planned increment (not yet built/measured): derive
-      form-level gender sets from the persisted `entries` at resolve time
-      (`nominal_cases` precedent) and fire only on genuinely disjoint
-      attested evidence. Constraint: relaxing `build()`'s unique-gender +
-      ≥2-attestation filter is inert — `load()` short-circuits to the cached
-      `lexicon.v2.json`, so coverage must come from the persisted entries
-      (or an asset-filename bump)
+      IS resolved. The planned increment (form-level gender sets derived
+      from the persisted `entries`, `nominal_cases` precedent, firing only
+      on genuinely disjoint attested evidence) was BUILT AND MEASURED
+      2026-10-19 and **REJECTED** — see the Gender-gating RECON section;
+      `FormLexicon.form_gender` is kept dormant + tested. Constraint:
+      relaxing `build()`'s unique-gender + ≥2-attestation filter is inert —
+      `load()` short-circuits to the cached `lexicon.v2.json`, so coverage
+      must come from the persisted entries (or an asset-filename bump)
 - [ ] det corruption misses when stanza re-parses structure (attach changes)
 - [ ] stanza emits no Mood=Sub for Greek: any future mood-dependent rule must
       use positional context (see rules/negation.py)
@@ -209,6 +210,30 @@ Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
       themselves); both attested classes are grammatical (det before a
       relative clause, clitic+clitic). Stutters are a raw-decoding/STT
       artifact, not a translation artifact
+
+## det_noun Gender-gating RECON — REJECTED (2026-10-19)
+
+- [ ] Suspect-head disjoint-evidence Gender gate — **REJECTED (measured
+      inert)**. Built as planned: `FormLexicon.form_gender(form)` (Gender
+      sets a form is attested with as NOUN/PROPN, read-time from the
+      persisted `entries` — the `nominal_cases`/`form_feats` precedent, no
+      asset or `build()` change) + a `det_noun` Gender gate firing only
+      when the head is tagger-suspect, its lemma gender is lexicon-resolved,
+      and the article's paradigm gender is disjoint from the form's attested
+      set (empty set or article-gender-present → suppress). Measured: 456
+      clean sweep det_noun FP **19 → 19** (identical flag lists gate ON vs
+      OFF; every other rule unchanged), fixed-seed corruption eval (n=100,
+      seed 42) det recall **58% → 58%** (14/24), pool FP identical
+      (det_noun 3, spelling 1). Instrumented trace: all 18 clean-sweep
+      Gender mismatches reach the gate with a **non-suspect** head — the
+      tagger's analysis is attested («Υπουργός»×4, «βουλευτή»,
+      «αντιπροσώποι», «βήμα»…) or the form is unseen («πρόποδες») — so the
+      suspect+resolved population the gate targets is empty on real data.
+      The unconditional Gender-gate variant was already measured at 58→38
+      recall (v0.0.17). Both variants dead: the Gender residue is a
+      confirmed tagger-quality ceiling. The `agreement.py` gate was
+      reverted; `form_gender` is kept (dormant, unit-tested — the
+      `nominal_cases` precedent) for any future consumer.
 
 ## v0.0.24 — Correction suggestions for rel_agreement, copula_pred; ranked spelling suggestions
 

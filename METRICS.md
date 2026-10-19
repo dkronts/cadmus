@@ -47,8 +47,9 @@ re-measure, don't trust.
 
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
-- det_noun residue 19/456 is a measured tagger-quality ceiling (Gender
-  gating costs pool recall 58→38%)
+- det_noun residue 19/456 is a measured tagger-quality ceiling (both
+  Gender-gating variants measured: unconditional costs pool recall
+  58→38%, suspect-gated disjoint-evidence is inert 19→19)
 - spelling residue 22/456 is correct detection of imperfect source text
   (documented REJECTED v0.0.15)
 - prep_case/verb_valence/rel_agreement residues (1/1/2) documented as
@@ -59,8 +60,12 @@ re-measure, don't trust.
 
 - rare nouns absent from UD train still FP-prone via the tagger (det_noun
   residue 19/456: unseen-form Gender noise + dual-usage nouns like
-  «Υπουργός» — form-level Gender gating measured and REJECTED: pool recall
-  58→38%; a tagger-quality ceiling)
+  «Υπουργός» — form-level Gender gating measured and REJECTED twice:
+  unconditional gate costs pool recall 58→38% (v0.0.17); suspect-head
+  disjoint-evidence gate measured inert (19→19 FP, recall 58% held — all
+  18 clean-sweep Gender mismatches have non-suspect heads); a
+  tagger-quality ceiling. `FormLexicon.form_gender` kept dormant+tested
+  (nominal_cases precedent) for any future consumer)
 - prep_case residue is 1/456 (από + παραλίες tagged Nom); the dormant
   `nominal_cases` resource is now active as the unseen-head guard
 - gender-coverage extensions must derive from the persisted `entries` at
@@ -95,3 +100,4 @@ perf if re-measured.
 | v0.0.22 | 2026-10 | rel_agreement: antecedent-ambiguity guard (agr_attested, NP ancestors, genitive possessors, foreign names) | 131 | identical (no pool target; probes fire) | rel_agreement 9→2 per 456 clean (νόσος = likely true source error kept) | — |
 | v0.0.23 | 2026-10 | spelling: EXTRA_KNOWN_WORDS hunspell-gap whitelist (11 measured words) | 124 | identical | treebank 22 unchanged; pilot LLM-Greek NONWORD FPs −11 (ratchet green) | — |
 | v0.0.24 | 2026-10 | suggestions: rel_agreement «ο οποίος», copula_pred «γιατρός», ranked spelling primaries | 136 | identical | identical (messages unchanged; only suggestion fields gained) | — |
+| — (rejected) | 2026-10 | det_noun: suspect-head disjoint-evidence Gender gate (`form_gender`) — **REJECTED**, gate reverted, resource kept | 139 | identical (det 58%, 14/24) | det_noun 19→19 per 456 clean (gate inert: 0 suppressions; all 18 Gender mismatches non-suspect) | — |

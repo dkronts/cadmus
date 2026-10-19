@@ -171,6 +171,20 @@ class FormLexicon:
                     out.setdefault(k, set()).add(v)
         return out
 
+    def form_gender(self, form):
+        """Set of Gender values a surface form is attested with as NOUN/PROPN.
+
+        Read-time derivation from entries (the nominal_cases precedent):
+        immune to the tagger repairing feats; empty for unseen forms
+        (precision-first)."""
+        genders = set()
+        for upos, pairs in self.entries.get(form.lower(), ()):
+            if upos in ("NOUN", "PROPN"):
+                gender = dict(pairs).get("Gender")
+                if gender:
+                    genders.add(gender)
+        return genders
+
     def agr_attested(self, form, gender, number):
         """True when the form is attested (any UPOS with agreement feats)
         with both this Gender and Number — used for antecedent-ambiguity
