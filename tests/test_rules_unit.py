@@ -1,5 +1,6 @@
-from fakes import FW, FakeLexicon, sent
+from fakes import FW, FakeLexicon, FakeNLP, sent
 
+from cadmus import CadmusChecker
 from cadmus import orthography as orth_layer
 from cadmus.data import filter_violations
 from cadmus.lexicon import FormLexicon, PropnLexicon
@@ -608,3 +609,60 @@ def test_spelling_unaccented_propn_match_still_flagged(monkeypatch):
     s, by_id = sent(words)
     env = {"propn": PropnLexicon(["απο"])}
     assert spelling(s, by_id, env) != []
+
+
+def _damp_checker(lex):
+    ck = CadmusChecker(nlp=FakeNLP(), use_lexicon=False)
+    ck.lexicon = lambda: lex
+    return ck
+
+
+def test_dampened_det_noun_head_not_suspect_not_dampened():
+    ck = _damp_checker(FakeLexicon(det_genders={"του": "Masc"}))
+    w = FW(1, "του", "DET")
+    h = FW(2, "σκύλος", "NOUN", lemma="σκύλος")
+    assert ck._dampened(w, h, rule="det_noun") is False
+
+
+def test_dampened_det_noun_head_none_not_dampened():
+    ck = _damp_checker(FakeLexicon(det_genders={"του": "Masc"}))
+    w = FW(1, "του", "DET")
+    assert ck._dampened(w, None, rule="det_noun") is False
+
+
+def test_dampened_det_noun_resolved_lemma_gender_not_dampened():
+    lex = FakeLexicon(det_genders={"του": "Masc"},
+                      noun_genders={"σκύλος": "Masc"},
+                      suspect_ids={2})
+    ck = _damp_checker(lex)
+    w = FW(1, "του", "DET")
+    h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    assert ck._dampened(w, h, rule="det_noun") is False
+
+
+def test_dampened_det_noun_unresolved_lemma_gender_dampened():
+    ck = _damp_checker(FakeLexicon(det_genders={"του": "Masc"}, suspect_ids={2}))
+    w = FW(1, "του", "DET")
+    h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    assert ck._dampened(w, h, rule="det_noun") is True
+    h.lemma = None
+    assert ck._dampened(w, h, rule="det_noun") is True
+    h.lemma = ""
+    assert ck._dampened(w, h, rule="det_noun") is True
+
+
+def test_dampened_det_noun_falls_through_when_det_gender_unresolvable():
+    w = FW(1, "του", "DET")
+    h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    for suspects, expected in [({1}, True), ({2}, True), (set(), False)]:
+        ck = _damp_checker(FakeLexicon(det_genders={}, suspect_ids=suspects))
+        assert ck._dampened(w, h, rule="det_noun") is expected
+
+
+def test_dampened_upos_guard_keeps_generic_path():
+    # 'του' resolves a det gender, but upos is NOUN: the det_noun branch must
+    # not run, so the generic suspect path still dampens a suspect w
+    ck = _damp_checker(FakeLexicon(det_genders={"του": "Masc"}, suspect_ids={1}))
+    w = FW(1, "του", "NOUN")
+    h = FW(2, "σκύλου", "NOUN", lemma="σκύλος")
+    assert ck._dampened(w, h, rule="det_noun") is True
