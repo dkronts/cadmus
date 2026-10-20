@@ -121,10 +121,18 @@ def run_sweep(checker=None, verbose=False, path=None):
 
 
 def run_eval(n=100, seed=42, verbose=False, checker=None):
+    """False-positive scan on clean text plus recall on injected errors.
+
+    When verbose, printed output is ordered: false-positive violation lines
+    first, then recall MISS lines, each group under its own section header
+    mirroring the report headings.
+    """
     checker = checker or CadmusChecker()
     sentences = load_clean_sentences(n)
     rng = random.Random(seed)
 
+    if verbose:
+        print("false positives on clean text:")
     fp_counts, fp_samples = sweep_tally(
         _strict_results(sentences, checker.check_batch(sentences)), verbose=verbose
     )
@@ -141,6 +149,8 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
 
     corrupted_texts = [c for c, _ in pairs]
     results = checker.check_batch(corrupted_texts) if pairs else []
+    if verbose:
+        print("recall on injected errors:")
     for i, (corrupted, violations) in enumerate(_strict_results(corrupted_texts, results)):
         target = pairs[i][1]
         fired = {v.rule for v in violations}

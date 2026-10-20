@@ -216,6 +216,21 @@ def test_run_eval_verbose_prints_miss_line(monkeypatch, capsys):
     assert "  nonword      0/1  (0%)" in report
 
 
+def test_run_eval_verbose_groups_fp_and_recall_sections(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    corrupt_map = {s: (s + " αβγ", "negation") for s in TEXTS}
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: corrupt_map.get(s))
+    run_eval(checker=StubChecker(), verbose=True)
+    out = capsys.readouterr().out
+
+    assert "[spelling] Τρεις λέξεις εδώ -> unknown form 'λεξη'" in out
+    fp_header = out.index("false positives on clean text:")
+    first_spelling = out.index("[spelling]")
+    recall_header = out.index("recall on injected errors:")
+    first_miss = out.index("MISS [negation]")
+    assert fp_header < first_spelling < recall_header < first_miss
+
+
 def test_run_eval_empty_fp_prints_none(monkeypatch):
     report = _recall_report(monkeypatch, EmptyChecker(), {})
     assert "false positives on clean text:\n  none" in report
