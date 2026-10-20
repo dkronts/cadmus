@@ -5,33 +5,38 @@ Append one run-log entry per shipped increment; keep the distributions
 current so SELECT stays data-driven. Numbers are measurements, not claims —
 re-measure, don't trust.
 
-## Current baseline (v0.0.15, 2026-10-16)
+## Current baseline (v0.0.26, 2026-10)
 
 - Rules: 12 shipped — `det_noun`, `adj_noun`, `subj_verb`, `rel_agreement`,
   `copula_pred`, `na_form`, `num_noun`, `prep_case`, `spelling`,
   `verb_valence`, `negation`, `propn_accent` — plus text-level `typography`.
-- Tests: 177 collected (120 model-free in the CI subset), all green.
-- Eval (UD-GDT clean test, fixed seed): recall — accents 95%, script-mix 96%,
-  non-words 88%, proper-noun accent 62%, wrong article 68%, δεν/μην 100%,
+- Tests: 186 collected, all green.
+- Eval (UD-GDT clean test, fixed seed): recall — accents 87%, script-mix 95%,
+  non-words 96%, proper-noun accent 78%, wrong article 58%, δεν/μην 100%,
   typography 100%. `copula_pred`, `na_form` have no corruption-pool samples —
   validated by targeted probes only. `rel_agreement`/`num_noun` are now
   measurable via the construction-targeted recall pool (v0.0.25: 23 UD-GDT
   sentences → 17 rel + 6 num corruptions); recall numbers pending a model run.
 - Precision: ~7 FP / 100 clean sentences (eval pool). Full 456-sentence clean
-  sweep: `spelling` 22 FP (was 77 pre-v0.0.15); other rules unchanged
-  (`prep_case` 26, `det_noun` 23, `verb_valence` 11, `adj_noun` 9,
-  `rel_agreement` 9, `typography` 5, `subj_verb` 5, `propn_accent` 1).
-  0-FP rules on the pool: `typography`, `propn_accent`, `rel_agreement`,
-  `copula_pred`, `na_form`, `num_noun`.
+  sweep: `spelling` 22 FP (was 77 pre-v0.0.15), `det_noun` 13 (v0.0.26),
+  `rel_agreement` 2 (v0.0.22), `prep_case` 1 (v0.0.18), `verb_valence` 1
+  (v0.0.21); `typography` 5, `subj_verb` 5, `propn_accent` 1 carried forward
+  (later rows: identical per-rule FP).
+  0-FP rules on the pool: `adj_noun` (v0.0.20), `typography`, `propn_accent`,
+  `rel_agreement`, `copula_pred`, `na_form`, `num_noun`.
 - Perf (CPU): model load ~5.4 s; single ~35 ms/sentence; batch ~19.4 sent/s.
+
+Figures above are derived from the Run log below; rules not re-measured since
+v0.0.15 (`typography`, `subj_verb`, `propn_accent` FP counts) are carried
+forward.
 
 ## Error distribution (FP by rule, latest ~100-clean sweep — approximate)
 
 | Rule | FP / 100 clean | Dominant cause |
 |---|---|---|
 | spelling | ~5 pool / 22 per 456 full (was 77) | residue: source typos + script-mix homoglyphs + words in no repo resource (see v0.0.15 REJECTED) |
-| det_noun | ~4 | stanza re-parse on corrupted input; rare-noun gender |
-| adj_noun | ~1 | genitive modifier misattachment |
+| det_noun | 13 per 456 full (was 23) | stanza re-parse on corrupted input; rare-noun gender |
+| adj_noun | 0 per 456 full (v0.0.20) | genitive modifier misattachment — guarded by form attestations |
 | subj_verb | ~1 | coordination parse artifacts |
 
 ## Recall by injected error type (latest sweep)
