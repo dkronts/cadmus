@@ -90,7 +90,16 @@ def load_targeted_sentences(path=None, forms=None):
     Greek-ratio and ``@/#`` hygiene filters as load_clean_sentences, but the
     4-15 token length filter is skipped: relative clauses and gendered
     numerals live mostly in the long tail. ``forms`` defaults to the
-    construction keys of the rel_agreement/num_noun corruptions. No limit."""
+    construction keys of the rel_agreement/num_noun corruptions. No limit.
+
+    The pool intentionally overlaps the length-filtered clean pool used by
+    the FP scan and the random recall pass: a 4-15 token sentence bearing a
+    REL_FLIP/NUM_FLIP form is returned by both loaders and is touched by both
+    the random corrupt() recall pass and the targeted corruptors in a single
+    run_eval. This is by design, not double-counting — the targeted pass is a
+    construction lens over the same corpus, not a disjoint partition, and
+    each pass measures a different question (false positives on clean text,
+    random-corruption recall, construction-targeted recall)."""
     path = path or ensure_asset("el_gdt-ud-test.conllu")
     if forms is None:
         forms = set(REL_FLIP) | set(NUM_FLIP)

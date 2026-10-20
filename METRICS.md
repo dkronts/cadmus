@@ -48,6 +48,14 @@ re-measure, don't trust.
 | rel_agreement / num_noun | pending | construction-targeted pool (17/6 corruptions); awaiting model run |
 | copula_pred / na_form | n/a | no pool samples; targeted probes |
 
+Note on the targeted-recall pool (intended overlap, not double-counting):
+`load_targeted_sentences` skips only the 4-15 token length filter, so the
+targeted pool is a superset lens over the same corpus — a short (4-15 token)
+target-bearing sentence legitimately appears in both the random recall pool
+and the targeted pool, and is touched by both corruptors in one `run_eval`.
+Each pass answers a different question (FP on clean text, random-corruption
+recall, construction-targeted recall); do not treat the overlap as a bug.
+
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
 - det_noun residue 19/456 is a measured tagger-quality ceiling (both
