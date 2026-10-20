@@ -34,6 +34,9 @@ class FakeLexicon:
         if nominal_cases is not None:
             self.nominal_cases = lambda form: set(nominal_cases.get(form.lower(), ()))
 
+    def noun_gender(self, lemma):
+        return self.noun_genders.get(lemma or "")
+
     def resolve_det_gender(self, word):
         return self.det_genders.get(word.text.lower())
 

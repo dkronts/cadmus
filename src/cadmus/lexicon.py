@@ -121,6 +121,10 @@ class FormLexicon:
         data = json.loads(lex_path.read_text(encoding="utf-8"))
         return cls(data["entries"], data["noun_genders"], data.get("det_genders"))
 
+    def noun_gender(self, lemma):
+        """Attested gender for a lemma, or None when unattested."""
+        return self.noun_genders.get(lemma or "")
+
     def resolve_gender(self, word):
         attested = self.noun_genders.get(word.lemma or "")
         feats = _word_feats(word)

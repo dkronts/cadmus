@@ -196,7 +196,7 @@ class CadmusChecker:
         if rule == "det_noun" and w.upos == "DET" and lex.resolve_det_gender(w) is not None:
             if h is None or not lex.is_suspect(h):
                 return False
-            return not lex.noun_genders.get(h.lemma or "")
+            return not lex.noun_gender(h.lemma)
         if lex.is_suspect(w):
             return True
         return h is not None and h.id != w.id and lex.is_suspect(h)
