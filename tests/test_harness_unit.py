@@ -1,5 +1,6 @@
 """Model-free, asset-free tests for the 456-sweep loader and report."""
 
+import collections
 import importlib.util
 from pathlib import Path
 
@@ -55,6 +56,25 @@ class StubChecker:
         return out
 
 
+class ManySpellingChecker:
+    def __init__(self):
+        self._damp_stats = {"suppressed": 0, "fired": 0}
+
+    def check_batch(self, texts, batch_size=32):
+        out = [[] for _ in texts]
+        for i, msg in [(0, "m0"), (0, "m1"), (1, "m2"), (1, "m3"), (2, "m4")]:
+            out[i].append(Violation(texts[i], "spelling", msg, 0, 4))
+        return out
+
+
+class EmptyChecker:
+    def __init__(self):
+        self._damp_stats = {"suppressed": 0, "fired": 0}
+
+    def check_batch(self, texts, batch_size=32):
+        return [[] for _ in texts]
+
+
 def test_run_sweep_report_counts_and_dampener(monkeypatch):
     monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
     stub = StubChecker()
@@ -85,6 +105,48 @@ def test_run_sweep_forwards_path_to_load_sweep_sentences(monkeypatch):
 
     run_sweep(checker=StubChecker())
     assert recorded == [some_path, None]
+
+
+def test_run_sweep_caps_samples_at_three(monkeypatch):
+    monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
+
+    created = []
+    real_defaultdict = collections.defaultdict
+
+    def tracking_defaultdict(*args, **kwargs):
+        d = real_defaultdict(*args, **kwargs)
+        created.append(d)
+        return d
+
+    monkeypatch.setattr(harness, "defaultdict", tracking_defaultdict)
+
+    report = run_sweep(checker=ManySpellingChecker())
+
+    spelling_lines = [ln for ln in report.splitlines() if "spelling" in ln]
+    assert len(spelling_lines) == 1
+    assert " 5 " in spelling_lines[0]
+    assert "e.g. m0" in spelling_lines[0]
+
+    samples = next(d for d in created if d.default_factory is list)
+    assert [msg for _, msg in samples["spelling"]] == ["m0", "m1", "m2"]
+
+
+def test_run_sweep_verbose_prints_each_violation(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
+    run_sweep(checker=StubChecker(), verbose=True)
+    out = capsys.readouterr().out
+    assert "[spelling] Τρεις λέξεις εδώ -> unknown form 'λεξη'" in out
+    assert (
+        "[typography] Απάντησε στο mail@example.com άμεσα παρακαλώ "
+        "-> space before punct" in out
+    )
+    assert out.count("[spelling]") == 2
+
+
+def test_run_sweep_empty_counts_prints_none(monkeypatch):
+    monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
+    report = run_sweep(checker=EmptyChecker())
+    assert "violations on clean text:\n  none" in report
 
 
 def _load_sweep456():
