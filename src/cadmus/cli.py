@@ -1,5 +1,6 @@
 import argparse
 import contextlib
+import errno
 import io
 import json
 import sys
@@ -21,13 +22,20 @@ def _open_input(path):
     try:
         handle = open(path, encoding="utf-8")
     except OSError as exc:
-        print(f"cadmus: error: {exc}", file=sys.stderr)
+        if exc.errno == errno.ENOENT:
+            print(f"cadmus: error: no such file: {path}", file=sys.stderr)
+        elif exc.errno == errno.EISDIR:
+            print(f"cadmus: error: is a directory: {path}", file=sys.stderr)
+        elif exc.errno == errno.EACCES:
+            print(f"cadmus: error: permission denied: {path}", file=sys.stderr)
+        else:
+            print(f"cadmus: error: {exc}", file=sys.stderr)
         return None
     try:
         data = handle.read()
     except UnicodeDecodeError as exc:
         handle.close()
-        print(f"cadmus: error: {exc}", file=sys.stderr)
+        print(f"cadmus: error: {path}: {exc}", file=sys.stderr)
         return None
     handle.close()
     return io.StringIO(data)
