@@ -11,7 +11,7 @@ from cadmus.checker import Violation
 
 class StubChecker:
     def __init__(self, *args, **kwargs):
-        pass
+        self._damp_stats = {"suppressed": 0, "fired": 0}
 
     def check(self, text, deep=False):
         return []
@@ -203,6 +203,20 @@ def test_eval_missing_targeted_path_reports_clean_error(monkeypatch, tmp_path, c
     captured = capsys.readouterr()
     assert rc == 2
     assert "cadmus: error:" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_eval_no_targeted_ignores_missing_targeted_path(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
+    monkeypatch.setattr(
+        "cadmus.eval.harness.load_clean_sentences",
+        lambda limit, path=None: ["Ο σκύλος τρέχει γρήγορα στο πάρκο"],
+    )
+    rc = cli.main(["eval", "--no-targeted",
+                   "--targeted-path", str(tmp_path / "nope.conllu")])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "cadmus: error:" not in captured.err
     assert "Traceback" not in captured.err
 
 
