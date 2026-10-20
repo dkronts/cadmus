@@ -385,11 +385,12 @@ def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
     assert fp_header < recall_header < targeted_header
 
 
-def test_run_eval_verbose_targeted_header_names_targeted_path(monkeypatch, capsys):
+def test_run_eval_verbose_targeted_header_names_targeted_path(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
-    run_eval(checker=EmptyChecker(), verbose=True, targeted_path="/tmp/alt_pool.conllu")
+    tgt = str(tmp_path / "alt_pool.conllu")
+    run_eval(checker=EmptyChecker(), verbose=True, targeted_path=tgt)
     out = capsys.readouterr().out
 
     assert "targeted recall (alt_pool.conllu):" in out
@@ -475,8 +476,8 @@ def _header_report(monkeypatch, **kwargs):
     return run_eval(checker=EmptyChecker(), **kwargs)
 
 
-def test_run_eval_report_header_names_path_corpus(monkeypatch):
-    report = _header_report(monkeypatch, path="/tmp/custom_corpus.conllu")
+def test_run_eval_report_header_names_path_corpus(tmp_path, monkeypatch):
+    report = _header_report(monkeypatch, path=str(tmp_path / "custom_corpus.conllu"))
     first = report.splitlines()[0]
     assert "custom_corpus.conllu" in first
     assert "UD-GDT" not in first
@@ -491,8 +492,8 @@ def _targeted_header(report):
     return [ln for ln in report.splitlines() if ln.startswith("targeted recall")][0]
 
 
-def test_run_eval_targeted_section_names_targeted_path(monkeypatch):
-    report = _header_report(monkeypatch, targeted_path="/tmp/alt_pool.conllu")
+def test_run_eval_targeted_section_names_targeted_path(tmp_path, monkeypatch):
+    report = _header_report(monkeypatch, targeted_path=str(tmp_path / "alt_pool.conllu"))
     header = _targeted_header(report)
     assert "alt_pool.conllu" in header
     assert "construction pool" not in header
