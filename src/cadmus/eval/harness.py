@@ -1,5 +1,6 @@
 """Evaluation harness: false-positive scan on clean text, recall on injected errors."""
 
+import os
 import random
 import re
 from collections import defaultdict
@@ -237,8 +238,9 @@ def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targete
             elif verbose:
                 print(f"  MISS [{target}]: {corrupted[:70]} -> {sorted(fired)}")
 
+    label = os.path.basename(path) if path else "UD-GDT test"
     lines = []
-    lines.append(f"eval: {len(sentences)} clean sentences (UD-GDT test), seed={seed}")
+    lines.append(f"eval: {len(sentences)} clean sentences ({label}), seed={seed}")
     lines.append("")
     lines.append("false positives on clean text:")
     if not fp_counts:

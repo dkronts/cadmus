@@ -457,6 +457,25 @@ def test_run_eval_forwards_path_to_load_clean_sentences(tmp_path, monkeypatch):
     assert "3 clean sentences" in report
 
 
+def _header_report(monkeypatch, **kwargs):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
+    return run_eval(checker=EmptyChecker(), **kwargs)
+
+
+def test_run_eval_report_header_names_path_corpus(monkeypatch):
+    report = _header_report(monkeypatch, path="/tmp/custom_corpus.conllu")
+    first = report.splitlines()[0]
+    assert "custom_corpus.conllu" in first
+    assert "UD-GDT" not in first
+
+
+def test_run_eval_report_header_defaults_to_ud_gdt(monkeypatch):
+    report = _header_report(monkeypatch)
+    assert "UD-GDT test" in report.splitlines()[0]
+
+
 def _load_sweep456():
     script_path = Path(__file__).resolve().parent.parent / "scripts" / "sweep456.py"
     spec = importlib.util.spec_from_file_location("sweep456", script_path)
