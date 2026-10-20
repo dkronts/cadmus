@@ -1,3 +1,5 @@
+import functools
+import io
 import json
 
 import pytest
@@ -10,9 +12,15 @@ class StubChecker:
     def __init__(self, *args, **kwargs):
         pass
 
+    def check(self, text):
+        return []
+
     def check_batch(self, texts, batch_size=32):
         self.recorded_batch_size = batch_size
         return [[] for _ in texts]
+
+    def diagnose(self, text):
+        return "diagnose report"
 
 
 @pytest.fixture(autouse=True)
@@ -158,3 +166,37 @@ def test_eval_forwards_flags(monkeypatch, tmp_path, capsys):
     assert recorded["targeted"] is False
     assert recorded["targeted_path"] == path
     assert "report" in capsys.readouterr().out
+
+
+def _open_recorder(monkeypatch):
+    opened = []
+    real_open = open
+
+    @functools.wraps(open)
+    def recording_open(*args, **kwargs):
+        handle = real_open(*args, **kwargs)
+        opened.append(handle)
+        return handle
+
+    monkeypatch.setattr("builtins.open", recording_open)
+    return opened
+
+
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose"])
+def test_path_file_handles_are_closed(monkeypatch, tmp_path, cmd):
+    opened = _open_recorder(monkeypatch)
+    path = tmp_path / "texts.txt"
+    path.write_text("clean line\n", encoding="utf-8")
+    rc = cli.main([cmd, str(path)])
+    assert rc == 0
+    assert opened
+    assert all(handle.closed for handle in opened)
+
+
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose"])
+def test_stdin_is_not_closed(monkeypatch, capsys, cmd):
+    stdin = io.StringIO("clean line\n")
+    monkeypatch.setattr(cli.sys, "stdin", stdin)
+    rc = cli.main([cmd])
+    assert rc == 0
+    assert not stdin.closed

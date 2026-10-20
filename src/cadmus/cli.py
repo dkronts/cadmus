@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import json
 import sys
 
@@ -125,21 +126,25 @@ def main(argv=None):
         from .stream import iter_checked
 
         rules = args.rules.split(",") if args.rules else None
-        stream = open(args.path, encoding="utf-8") if args.path else sys.stdin
-        for text, vs in iter_checked(stream, checker.check, min_severity=args.severity, rules=rules):
-            if args.as_json:
-                print(json.dumps({"text": text, "violations": [v.as_dict() for v in vs]},
-                                 ensure_ascii=False), flush=True)
-            elif vs:
-                for v in vs:
-                    extra = f"  → {v.suggestion}" if v.suggestion else ""
-                    print(f"[{v.rule}/{v.severity}] {v.message}{extra}  :: {text}", flush=True)
+        stream = (open(args.path, encoding="utf-8") if args.path
+                  else contextlib.nullcontext(sys.stdin))
+        with stream as stream:
+            for text, vs in iter_checked(stream, checker.check, min_severity=args.severity, rules=rules):
+                if args.as_json:
+                    print(json.dumps({"text": text, "violations": [v.as_dict() for v in vs]},
+                                     ensure_ascii=False), flush=True)
+                elif vs:
+                    for v in vs:
+                        extra = f"  → {v.suggestion}" if v.suggestion else ""
+                        print(f"[{v.rule}/{v.severity}] {v.message}{extra}  :: {text}", flush=True)
         return 0
 
     if args.cmd == "batch":
         rules = args.rules.split(",") if args.rules else None
-        stream = open(args.path, encoding="utf-8") if args.path else sys.stdin
-        lines = [ln.rstrip("\n") for ln in stream if ln.strip()]
+        stream = (open(args.path, encoding="utf-8") if args.path
+                  else contextlib.nullcontext(sys.stdin))
+        with stream as stream:
+            lines = [ln.rstrip("\n") for ln in stream if ln.strip()]
         for text, vs in zip(lines, checker.check_batch(lines, batch_size=args.batch_size)):
             vs = filter_violations(vs, min_severity=args.severity, rules=rules)
             if args.as_json:
@@ -152,11 +157,19 @@ def main(argv=None):
         return 0
 
     if args.cmd == "diagnose":
-        text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
+        if args.path:
+            with open(args.path, encoding="utf-8") as f:
+                text = f.read()
+        else:
+            text = sys.stdin.read()
         print(checker.diagnose(text))
         return 0
 
-    text = open(args.path, encoding="utf-8").read() if args.path else sys.stdin.read()
+    if args.path:
+        with open(args.path, encoding="utf-8") as f:
+            text = f.read()
+    else:
+        text = sys.stdin.read()
     violations = checker.check(text, deep=getattr(args, "deep", False))
     rules = args.rules.split(",") if args.rules else None
     violations = filter_violations(violations, min_severity=args.severity, rules=rules)
