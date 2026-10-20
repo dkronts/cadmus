@@ -385,6 +385,37 @@ def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
     assert fp_header < recall_header < targeted_header
 
 
+def test_run_eval_targeted_false_skips_load_and_section(monkeypatch):
+    recorded = []
+
+    def recorder(path=None, forms=None):
+        recorded.append(path)
+        return []
+
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", recorder)
+    report = run_eval(checker=EmptyChecker(), targeted=False)
+
+    assert recorded == []
+    assert "targeted recall" not in report
+
+
+def test_run_eval_forwards_targeted_path(monkeypatch):
+    recorded = []
+
+    def recorder(path=None, forms=None):
+        recorded.append(path)
+        return []
+
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", recorder)
+    run_eval(checker=EmptyChecker(), targeted_path="other/file.conllu")
+
+    assert recorded == ["other/file.conllu"]
+
+
 def _load_sweep456():
     script_path = Path(__file__).resolve().parent.parent / "scripts" / "sweep456.py"
     spec = importlib.util.spec_from_file_location("sweep456", script_path)

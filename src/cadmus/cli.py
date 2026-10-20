@@ -45,6 +45,11 @@ def main(argv=None):
     p_eval.add_argument("--n", type=int, default=100)
     p_eval.add_argument("--seed", type=int, default=42)
     p_eval.add_argument("-v", "--verbose", action="store_true")
+    p_eval.add_argument("--targeted-path", dest="targeted_path", default=None,
+                        help="conllu file for the targeted construction pool "
+                             "(default UD-GDT asset)")
+    p_eval.add_argument("--no-targeted", dest="targeted", action="store_false", default=True,
+                        help="skip the targeted construction-pool recall pass")
 
     p_export = sub.add_parser("export", help="emit aligned (broken->correct) training pairs from UD-GDT")
     p_export.add_argument("--n", type=int, default=200)
@@ -92,7 +97,8 @@ def main(argv=None):
     if args.cmd == "eval":
         from .eval.harness import run_eval
 
-        print(run_eval(n=args.n, seed=args.seed, verbose=args.verbose))
+        print(run_eval(n=args.n, seed=args.seed, verbose=args.verbose,
+                       targeted=args.targeted, targeted_path=args.targeted_path))
         return 0
 
     if args.cmd == "export":

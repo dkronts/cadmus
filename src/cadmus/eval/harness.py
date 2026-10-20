@@ -153,13 +153,16 @@ def run_sweep(checker=None, verbose=False, path=None):
     return "\n".join(lines)
 
 
-def run_eval(n=100, seed=42, verbose=False, checker=None):
+def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targeted_path=None):
     """False-positive scan on clean text plus recall on injected errors.
 
     When verbose, printed output is ordered: false-positive violation lines
     first, then recall MISS lines, then targeted recall MISS lines, each group
     under its own section header mirroring the report headings. Empty verbose
     sections print a '  none' marker mirroring the report.
+
+    targeted=False skips the construction-pool recall pass entirely and omits
+    its report section; targeted_path overrides the conllu asset it loads.
     """
     checker = checker or CadmusChecker()
     sentences = load_clean_sentences(n)
@@ -197,30 +200,31 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
         elif verbose:
             print(f"  MISS [{target}]: {corrupted[:70]} -> {sorted(fired)}")
 
-    tgt_counts = defaultdict(lambda: [0, 0])
-    tgt_pairs = []
-    for s in load_targeted_sentences():
-        for corrupt_fn in (corrupt_rel_agreement, corrupt_num_noun):
-            result = corrupt_fn(s, rng)
-            if not result:
-                continue
-            corrupted, target = result
-            tgt_counts[target][1] += 1
-            tgt_pairs.append((corrupted, target))
+    if targeted:
+        tgt_counts = defaultdict(lambda: [0, 0])
+        tgt_pairs = []
+        for s in load_targeted_sentences(path=targeted_path):
+            for corrupt_fn in (corrupt_rel_agreement, corrupt_num_noun):
+                result = corrupt_fn(s, rng)
+                if not result:
+                    continue
+                corrupted, target = result
+                tgt_counts[target][1] += 1
+                tgt_pairs.append((corrupted, target))
 
-    tgt_texts = [c for c, _ in tgt_pairs]
-    tgt_results = checker.check_batch(tgt_texts) if tgt_pairs else []
-    if verbose:
-        print("targeted recall (construction pool):")
-    if verbose and not tgt_pairs:
-        print("  none")
-    for i, (corrupted, violations) in enumerate(_strict_results(tgt_texts, tgt_results)):
-        target = tgt_pairs[i][1]
-        fired = {v.rule for v in violations}
-        if fired & TARGET_RULES.get(target, {target}):
-            tgt_counts[target][0] += 1
-        elif verbose:
-            print(f"  MISS [{target}]: {corrupted[:70]} -> {sorted(fired)}")
+        tgt_texts = [c for c, _ in tgt_pairs]
+        tgt_results = checker.check_batch(tgt_texts) if tgt_pairs else []
+        if verbose:
+            print("targeted recall (construction pool):")
+        if verbose and not tgt_pairs:
+            print("  none")
+        for i, (corrupted, violations) in enumerate(_strict_results(tgt_texts, tgt_results)):
+            target = tgt_pairs[i][1]
+            fired = {v.rule for v in violations}
+            if fired & TARGET_RULES.get(target, {target}):
+                tgt_counts[target][0] += 1
+            elif verbose:
+                print(f"  MISS [{target}]: {corrupted[:70]} -> {sorted(fired)}")
 
     lines = []
     lines.append(f"eval: {len(sentences)} clean sentences (UD-GDT test), seed={seed}")
@@ -238,14 +242,15 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
         hit, tot = rec_counts[target]
         pct = 100.0 * hit / tot if tot else 0.0
         lines.append(f"  {target:12} {hit}/{tot}  ({pct:.0f}%)")
-    lines.append("")
-    lines.append("targeted recall (construction pool):")
-    if not tgt_counts:
-        lines.append("  none")
-    for target in sorted(tgt_counts):
-        hit, tot = tgt_counts[target]
-        pct = 100.0 * hit / tot if tot else 0.0
-        lines.append(f"  {target:12} {hit}/{tot}  ({pct:.0f}%)")
+    if targeted:
+        lines.append("")
+        lines.append("targeted recall (construction pool):")
+        if not tgt_counts:
+            lines.append("  none")
+        for target in sorted(tgt_counts):
+            hit, tot = tgt_counts[target]
+            pct = 100.0 * hit / tot if tot else 0.0
+            lines.append(f"  {target:12} {hit}/{tot}  ({pct:.0f}%)")
     damp = checker._damp_stats
     lines.append("")
     lines.append(f"dampener: {damp['suppressed']} flags suppressed by lexicon, {damp['fired']} fired")
