@@ -16,6 +16,14 @@ def _positive_int(value):
     return n
 
 
+def _open_input(path):
+    try:
+        return open(path, encoding="utf-8")
+    except OSError as exc:
+        print(f"cadmus: error: {exc}", file=sys.stderr)
+        return None
+
+
 def _render(violations):
     if not violations:
         print("OK: no violations found.")
@@ -130,8 +138,10 @@ def main(argv=None):
         from .stream import iter_checked
 
         rules = args.rules.split(",") if args.rules else None
-        stream = (open(args.path, encoding="utf-8") if args.path
+        stream = (_open_input(args.path) if args.path
                   else contextlib.nullcontext(sys.stdin))
+        if stream is None:
+            return 2
         with stream as stream:
             for text, vs in iter_checked(stream, checker.check, min_severity=args.severity, rules=rules):
                 if args.as_json:
@@ -145,8 +155,10 @@ def main(argv=None):
 
     if args.cmd == "batch":
         rules = args.rules.split(",") if args.rules else None
-        stream = (open(args.path, encoding="utf-8") if args.path
+        stream = (_open_input(args.path) if args.path
                   else contextlib.nullcontext(sys.stdin))
+        if stream is None:
+            return 2
         with stream as stream:
             lines = [ln.rstrip("\n") for ln in stream if ln.strip()]
         for text, vs in zip(lines, checker.check_batch(lines, batch_size=args.batch_size)):
@@ -162,7 +174,10 @@ def main(argv=None):
 
     if args.cmd == "diagnose":
         if args.path:
-            with open(args.path, encoding="utf-8") as f:
+            f = _open_input(args.path)
+            if f is None:
+                return 2
+            with f:
                 text = f.read()
         else:
             text = sys.stdin.read()
@@ -170,7 +185,10 @@ def main(argv=None):
         return 0
 
     if args.path:
-        with open(args.path, encoding="utf-8") as f:
+        f = _open_input(args.path)
+        if f is None:
+            return 2
+        with f:
             text = f.read()
     else:
         text = sys.stdin.read()

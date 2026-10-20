@@ -215,3 +215,13 @@ def test_stdin_is_not_closed(monkeypatch, capsys, cmd):
     rc = cli.main([cmd])
     assert rc == 0
     assert not stdin.closed
+
+
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose", "check"])
+def test_missing_input_file_reports_clean_error(tmp_path, capsys, cmd):
+    missing = str(tmp_path / "nope.txt")
+    rc = cli.main([cmd, missing])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "cadmus: error:" in captured.err
+    assert "Traceback" not in captured.err
