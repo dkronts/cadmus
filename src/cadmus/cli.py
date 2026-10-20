@@ -1,5 +1,6 @@
 import argparse
 import contextlib
+import io
 import json
 import sys
 
@@ -18,10 +19,18 @@ def _positive_int(value):
 
 def _open_input(path):
     try:
-        return open(path, encoding="utf-8")
+        handle = open(path, encoding="utf-8")
     except OSError as exc:
         print(f"cadmus: error: {exc}", file=sys.stderr)
         return None
+    try:
+        data = handle.read()
+    except UnicodeDecodeError as exc:
+        handle.close()
+        print(f"cadmus: error: {exc}", file=sys.stderr)
+        return None
+    handle.close()
+    return io.StringIO(data)
 
 
 def _render(violations):

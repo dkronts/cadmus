@@ -225,3 +225,14 @@ def test_missing_input_file_reports_clean_error(tmp_path, capsys, cmd):
     assert rc == 2
     assert "cadmus: error:" in captured.err
     assert "Traceback" not in captured.err
+
+
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose", "check"])
+def test_non_utf8_input_reports_clean_error(tmp_path, capsys, cmd):
+    path = tmp_path / "bad.txt"
+    path.write_bytes(b"clean\n\xff\xfe\x00garbage\n")
+    rc = cli.main([cmd, str(path)])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "cadmus: error:" in captured.err
+    assert "Traceback" not in captured.err
