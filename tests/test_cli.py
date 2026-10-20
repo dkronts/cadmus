@@ -184,6 +184,15 @@ def test_eval_forwards_path(monkeypatch, tmp_path, capsys):
     assert "report" in capsys.readouterr().out
 
 
+def test_eval_missing_path_reports_clean_error(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
+    rc = cli.main(["eval", "--path", str(tmp_path / "nope.conllu")])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "cadmus: error:" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def _open_recorder(monkeypatch):
     opened = []
     real_open = open

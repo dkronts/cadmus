@@ -133,9 +133,14 @@ def main(argv=None):
     if args.cmd == "eval":
         from .eval.harness import run_eval
 
-        print(run_eval(n=args.n, seed=args.seed, verbose=args.verbose,
-                       targeted=args.targeted, targeted_path=args.targeted_path,
-                       path=args.path))
+        try:
+            report = run_eval(n=args.n, seed=args.seed, verbose=args.verbose,
+                              targeted=args.targeted, targeted_path=args.targeted_path,
+                              path=args.path)
+        except OSError as exc:
+            print(f"cadmus: error: {exc}", file=sys.stderr)
+            return 2
+        print(report)
         return 0
 
     if args.cmd == "export":
