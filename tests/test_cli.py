@@ -193,6 +193,19 @@ def test_eval_missing_path_reports_clean_error(monkeypatch, tmp_path, capsys):
     assert "Traceback" not in captured.err
 
 
+def test_eval_missing_targeted_path_reports_clean_error(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
+    monkeypatch.setattr(
+        "cadmus.eval.harness.load_clean_sentences",
+        lambda limit, path=None: ["Ο σκύλος τρέχει γρήγορα στο πάρκο"],
+    )
+    rc = cli.main(["eval", "--targeted-path", str(tmp_path / "nope.conllu")])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "cadmus: error:" in captured.err
+    assert "Traceback" not in captured.err
+
+
 def _open_recorder(monkeypatch):
     opened = []
     real_open = open
