@@ -58,6 +58,9 @@ def main(argv=None):
                              "(default UD-GDT asset)")
     p_eval.add_argument("--no-targeted", dest="targeted", action="store_false", default=True,
                         help="skip the targeted construction-pool recall pass")
+    p_eval.add_argument("--path", dest="path", default=None,
+                        help="conllu file for the clean FP-scan and recall pools "
+                             "(default UD-GDT asset)")
 
     p_export = sub.add_parser("export", help="emit aligned (broken->correct) training pairs from UD-GDT")
     p_export.add_argument("--n", type=int, default=200)
@@ -106,7 +109,8 @@ def main(argv=None):
         from .eval.harness import run_eval
 
         print(run_eval(n=args.n, seed=args.seed, verbose=args.verbose,
-                       targeted=args.targeted, targeted_path=args.targeted_path))
+                       targeted=args.targeted, targeted_path=args.targeted_path,
+                       path=args.path))
         return 0
 
     if args.cmd == "export":

@@ -168,6 +168,21 @@ def test_eval_forwards_flags(monkeypatch, tmp_path, capsys):
     assert "report" in capsys.readouterr().out
 
 
+def test_eval_forwards_path(monkeypatch, tmp_path, capsys):
+    recorded = {}
+
+    def recorder(**kwargs):
+        recorded.update(kwargs)
+        return "report"
+
+    monkeypatch.setattr("cadmus.eval.harness.run_eval", recorder)
+    path = str(tmp_path / "t.conllu")
+    rc = cli.main(["eval", "--path", path])
+    assert rc == 0
+    assert recorded["path"] == path
+    assert "report" in capsys.readouterr().out
+
+
 def _open_recorder(monkeypatch):
     opened = []
     real_open = open
