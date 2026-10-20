@@ -355,6 +355,36 @@ def test_run_eval_empty_targeted_pool_prints_none(monkeypatch):
     assert "targeted recall (construction pool):\n  none" in report
 
 
+def test_run_eval_verbose_prints_targeted_miss_line(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: [])
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    rel_sentence = "Ο άντρας ο οποίος μίλησε χθες ήταν ήρεμος"
+    monkeypatch.setattr(
+        harness, "load_targeted_sentences", lambda path=None, forms=None: [rel_sentence]
+    )
+    run_eval(checker=EmptyChecker(), verbose=True)
+    out = capsys.readouterr().out
+
+    recall_header = out.index("recall on injected errors:")
+    targeted_header = out.index("targeted recall (construction pool):")
+    first_miss = out.index("  MISS [rel_agreement]")
+    assert recall_header < targeted_header < first_miss
+
+
+def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
+    run_eval(checker=EmptyChecker(), verbose=True)
+    out = capsys.readouterr().out
+
+    assert "targeted recall (construction pool):\n  none" in out
+    fp_header = out.index("false positives on clean text:")
+    recall_header = out.index("recall on injected errors:")
+    targeted_header = out.index("targeted recall (construction pool):")
+    assert fp_header < recall_header < targeted_header
+
+
 def _load_sweep456():
     script_path = Path(__file__).resolve().parent.parent / "scripts" / "sweep456.py"
     spec = importlib.util.spec_from_file_location("sweep456", script_path)

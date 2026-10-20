@@ -157,9 +157,9 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
     """False-positive scan on clean text plus recall on injected errors.
 
     When verbose, printed output is ordered: false-positive violation lines
-    first, then recall MISS lines, each group under its own section header
-    mirroring the report headings. Empty verbose sections print a '  none'
-    marker mirroring the report.
+    first, then recall MISS lines, then targeted recall MISS lines, each group
+    under its own section header mirroring the report headings. Empty verbose
+    sections print a '  none' marker mirroring the report.
     """
     checker = checker or CadmusChecker()
     sentences = load_clean_sentences(n)
@@ -210,11 +210,17 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
 
     tgt_texts = [c for c, _ in tgt_pairs]
     tgt_results = checker.check_batch(tgt_texts) if tgt_pairs else []
+    if verbose:
+        print("targeted recall (construction pool):")
+    if verbose and not tgt_pairs:
+        print("  none")
     for i, (corrupted, violations) in enumerate(_strict_results(tgt_texts, tgt_results)):
         target = tgt_pairs[i][1]
         fired = {v.rule for v in violations}
         if fired & TARGET_RULES.get(target, {target}):
             tgt_counts[target][0] += 1
+        elif verbose:
+            print(f"  MISS [{target}]: {corrupted[:70]} -> {sorted(fired)}")
 
     lines = []
     lines.append(f"eval: {len(sentences)} clean sentences (UD-GDT test), seed={seed}")
