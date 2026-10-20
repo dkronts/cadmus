@@ -1,6 +1,9 @@
+import json
+
 import pytest
 
 import cadmus.cli as cli
+from cadmus.checker import Violation
 
 
 class StubChecker:
@@ -57,6 +60,84 @@ def test_batch_default_batch_size_is_32(monkeypatch, tmp_path):
     rc = cli.main(["batch", path])
     assert rc == 0
     assert recorded["checker"].recorded_batch_size == 32
+
+
+def _violations(text):
+    return [
+        Violation(sentence=text, rule="det_noun",
+                  message="article-noun disagreement", start_char=0, end_char=3),
+        Violation(sentence=text, rule="subj_verb",
+                  message="subject-verb disagreement", start_char=4, end_char=9,
+                  suggestion="use a plural verb"),
+    ]
+
+
+def _violation_batch_recorder(monkeypatch, tmp_path):
+    recorded = {}
+
+    class ViolationChecker(StubChecker):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            recorded["checker"] = self
+
+        def check_batch(self, texts, batch_size=32):
+            self.recorded_batch_size = batch_size
+            self.recorded_texts = list(texts)
+            return [_violations(t) if "bad" in t else [] for t in texts]
+
+    monkeypatch.setattr(cli, "CadmusChecker", ViolationChecker)
+    path = tmp_path / "texts.txt"
+    path.write_text("clean line\nbad line\n", encoding="utf-8")
+    return recorded, str(path)
+
+
+def test_batch_renders_violations(monkeypatch, tmp_path, capsys):
+    recorded, path = _violation_batch_recorder(monkeypatch, tmp_path)
+    rc = cli.main(["batch", path])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert recorded["checker"].recorded_texts == ["clean line", "bad line"]
+    assert "[det_noun/medium] article-noun disagreement  :: bad line" in out
+    assert ("[subj_verb/high] subject-verb disagreement  → use a plural verb"
+            "  :: bad line") in out
+    assert "clean line" not in out
+
+
+def test_batch_as_json_emits_violations(monkeypatch, tmp_path, capsys):
+    _, path = _violation_batch_recorder(monkeypatch, tmp_path)
+    rc = cli.main(["batch", "--json", path])
+    assert rc == 0
+    objects = [json.loads(ln) for ln in capsys.readouterr().out.splitlines()]
+    assert [obj["text"] for obj in objects] == ["clean line", "bad line"]
+    assert objects[0]["violations"] == []
+    assert {"text", "violations"} <= set(objects[1])
+    violation = objects[1]["violations"][0]
+    assert {"rule", "severity", "message", "suggestion",
+            "start_char", "end_char"} <= set(violation)
+    assert violation["rule"] == "det_noun"
+    assert violation["severity"] == "medium"
+    assert violation["message"] == "article-noun disagreement"
+    assert violation["suggestion"] == ""
+    assert violation["start_char"] == 0
+    assert violation["end_char"] == 3
+
+
+def test_batch_severity_filter(monkeypatch, tmp_path, capsys):
+    _, path = _violation_batch_recorder(monkeypatch, tmp_path)
+    rc = cli.main(["batch", "--severity", "high", path])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "det_noun" not in out
+    assert "[subj_verb/high] subject-verb disagreement" in out
+
+
+def test_batch_rules_filter(monkeypatch, tmp_path, capsys):
+    _, path = _violation_batch_recorder(monkeypatch, tmp_path)
+    rc = cli.main(["batch", "--rules", "det_noun", path])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "[det_noun/medium] article-noun disagreement" in out
+    assert "subj_verb" not in out
 
 
 def test_eval_forwards_flags(monkeypatch, tmp_path, capsys):
