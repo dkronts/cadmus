@@ -13,8 +13,10 @@ re-measure, don't trust.
 - Tests: 89 collected (67 model-free in the CI subset), all green.
 - Eval (UD-GDT clean test, fixed seed): recall — accents 95%, script-mix 96%,
   non-words 88%, proper-noun accent 62%, wrong article 68%, δεν/μην 100%,
-  typography 100%. `rel_agreement`, `copula_pred`, `na_form`, `num_noun` have
-  no corruption-pool samples — validated by targeted probes only.
+  typography 100%. `copula_pred`, `na_form` have no corruption-pool samples —
+  validated by targeted probes only. `rel_agreement`/`num_noun` are now
+  measurable via the construction-targeted recall pool (v0.0.25: 23 UD-GDT
+  sentences → 17 rel + 6 num corruptions); recall numbers pending a model run.
 - Precision: ~7 FP / 100 clean sentences (eval pool). Full 456-sentence clean
   sweep: `spelling` 22 FP (was 77 pre-v0.0.15); other rules unchanged
   (`prep_case` 26, `det_noun` 23, `verb_valence` 11, `adj_noun` 9,
@@ -43,7 +45,8 @@ re-measure, don't trust.
 | nonword | 88% | PROPN misses dominate |
 | propn_accent | 62% | inflected/foreign names silent by design |
 | det_noun (article swap) | 68% | stanza "repairs" the corrupted article |
-| rel_agreement / copula_pred / na_form / num_noun | n/a | no pool samples; targeted probes |
+| rel_agreement / num_noun | pending | construction-targeted pool (17/6 corruptions); awaiting model run |
+| copula_pred / na_form | n/a | no pool samples; targeted probes |
 
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
@@ -80,7 +83,8 @@ re-measure, don't trust.
 - det corruption misses when stanza re-parses structure (attach changes)
 - no `Mood=Sub` in Greek stanza — mood rules need positional context
 - `na_form` / `verb_valence` recall bounded by treebank coverage
-- relcl rules have no corruption-pool samples (need a longer-sentence pool)
+- relcl corruption-pool samples: construction-targeted pool shipped (v0.0.25,
+  23 sentences → 17 rel + 6 num corruptions); recall numbers pending a model run
 
 ## Run log
 
@@ -101,3 +105,4 @@ perf if re-measured.
 | v0.0.23 | 2026-10 | spelling: EXTRA_KNOWN_WORDS hunspell-gap whitelist (11 measured words) | 124 | identical | treebank 22 unchanged; pilot LLM-Greek NONWORD FPs −11 (ratchet green) | — |
 | v0.0.24 | 2026-10 | suggestions: rel_agreement «ο οποίος», copula_pred «γιατρός», ranked spelling primaries | 136 | identical | identical (messages unchanged; only suggestion fields gained) | — |
 | — (rejected) | 2026-10 | det_noun: suspect-head disjoint-evidence Gender gate (`form_gender`) — **REJECTED**, gate reverted, resource kept | 139 | identical (det 58%, 14/24) | det_noun 19→19 per 456 clean (gate inert: 0 suppressions; all 18 Gender mismatches non-suspect) | — |
+| v0.0.25 (unreleased) | 2026-10 | eval: construction-targeted recall pool (`load_targeted_sentences` + targeted pass in `run_eval`) | 177 | pending model run (pool: rel 17, num 6 corruptions) | unchanged (FP scan + random recall pool identical) | — |

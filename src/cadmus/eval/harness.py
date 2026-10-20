@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from ..checker import CadmusChecker
 from ..lexicon import ensure_asset
-from .corruptions import corrupt
+from .corruptions import REL_FLIP, NUM_FLIP, corrupt, corrupt_num_noun, corrupt_rel_agreement
 
 GREEK_RE = re.compile(r"[\u0370-\u03ff\u1f00-\u1fff]")
 
@@ -80,6 +80,39 @@ def load_sweep_sentences(path=None):
             line = line.rstrip("\n")
             if line.startswith("# text = "):
                 out.append(line[len("# text = "):])
+    return out
+
+
+def load_targeted_sentences(path=None, forms=None):
+    """Sentences bearing at least one target construction, at any length.
+
+    Same ``# text = `` scan as load_sweep_sentences, and the same
+    Greek-ratio and ``@/#`` hygiene filters as load_clean_sentences, but the
+    4-15 token length filter is skipped: relative clauses and gendered
+    numerals live mostly in the long tail. ``forms`` defaults to the
+    construction keys of the rel_agreement/num_noun corruptions. No limit."""
+    path = path or ensure_asset("el_gdt-ud-test.conllu")
+    if forms is None:
+        forms = set(REL_FLIP) | set(NUM_FLIP)
+    patterns = [re.compile(rf"\b{re.escape(f)}\b", re.IGNORECASE) for f in forms]
+    out = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if not line.startswith("# text = "):
+                continue
+            t = line[len("# text = "):]
+            toks = t.split()
+            if not toks:
+                continue
+            greek = [w for w in toks if GREEK_RE.search(w)]
+            if len(greek) / len(toks) < 0.9:
+                continue
+            if any(ch in t for ch in "@/#"):
+                continue
+            if not any(p.search(t) for p in patterns):
+                continue
+            out.append(t)
     return out
 
 
@@ -164,6 +197,25 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
         elif verbose:
             print(f"  MISS [{target}]: {corrupted[:70]} -> {sorted(fired)}")
 
+    tgt_counts = defaultdict(lambda: [0, 0])
+    tgt_pairs = []
+    for s in load_targeted_sentences():
+        for corrupt_fn in (corrupt_rel_agreement, corrupt_num_noun):
+            result = corrupt_fn(s, rng)
+            if not result:
+                continue
+            corrupted, target = result
+            tgt_counts[target][1] += 1
+            tgt_pairs.append((corrupted, target))
+
+    tgt_texts = [c for c, _ in tgt_pairs]
+    tgt_results = checker.check_batch(tgt_texts) if tgt_pairs else []
+    for i, (corrupted, violations) in enumerate(_strict_results(tgt_texts, tgt_results)):
+        target = tgt_pairs[i][1]
+        fired = {v.rule for v in violations}
+        if fired & TARGET_RULES.get(target, {target}):
+            tgt_counts[target][0] += 1
+
     lines = []
     lines.append(f"eval: {len(sentences)} clean sentences (UD-GDT test), seed={seed}")
     lines.append("")
@@ -178,6 +230,14 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
         lines.append("  none")
     for target in sorted(rec_counts):
         hit, tot = rec_counts[target]
+        pct = 100.0 * hit / tot if tot else 0.0
+        lines.append(f"  {target:12} {hit}/{tot}  ({pct:.0f}%)")
+    lines.append("")
+    lines.append("targeted recall (construction pool):")
+    if not tgt_counts:
+        lines.append("  none")
+    for target in sorted(tgt_counts):
+        hit, tot = tgt_counts[target]
         pct = 100.0 * hit / tot if tot else 0.0
         lines.append(f"  {target:12} {hit}/{tot}  ({pct:.0f}%)")
     damp = checker._damp_stats

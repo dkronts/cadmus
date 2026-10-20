@@ -1,13 +1,14 @@
 """Model-free, asset-free tests for the 456-sweep loader and report."""
 
 import importlib.util
+import random
 from pathlib import Path
 
 import pytest
 
 from cadmus.checker import Violation
 from cadmus.eval import harness
-from cadmus.eval.harness import load_sweep_sentences, run_eval, run_sweep
+from cadmus.eval.harness import load_sweep_sentences, load_targeted_sentences, run_eval, run_sweep
 
 TEXTS = [
     "Τρεις λέξεις εδώ",
@@ -158,6 +159,7 @@ def test_run_sweep_raises_when_checker_returns_short_results(monkeypatch):
 def test_run_eval_fp_tally_uses_check_batch(monkeypatch):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     stub = StubChecker()
     report = run_eval(checker=stub)
 
@@ -188,6 +190,7 @@ class RecallStubChecker:
 def _recall_report(monkeypatch, checker, corrupt_map, verbose=False):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: corrupt_map.get(s))
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     return run_eval(checker=checker, verbose=verbose)
 
 
@@ -220,6 +223,7 @@ def test_run_eval_verbose_groups_fp_and_recall_sections(monkeypatch, capsys):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
     corrupt_map = {s: (s + " αβγ", "negation") for s in TEXTS}
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: corrupt_map.get(s))
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     run_eval(checker=StubChecker(), verbose=True)
     out = capsys.readouterr().out
 
@@ -244,6 +248,7 @@ def test_run_eval_empty_recall_prints_none(monkeypatch):
 def test_run_eval_verbose_empty_fp_prints_none(monkeypatch, capsys):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     run_eval(checker=EmptyChecker(), verbose=True)
     out = capsys.readouterr().out
     assert "false positives on clean text:\n  none" in out
@@ -263,6 +268,91 @@ def test_run_eval_recall_raises_when_checker_returns_short_results(monkeypatch):
             ShortResultsChecker(short_from_call=1),
             {TEXTS[0]: (corrupted, "nonword")},
         )
+
+
+TARGETED_TEXTS = [
+    "Ο καθηγητής που μίλησε χθες στην εκδήλωση ο οποίος παρουσίασε τα νέα ευρήματα "
+    "της έρευνας που διεξήχθη το περασμένο εξάμηνο στο εργαστήριο",
+    "τρεις φίλοι ήρθαν",
+    "Σύντομη πρόταση.",
+    "Ο οποίος παρουσίασε τα νέα ευρήματα της έρευνας που διεξήχθη χθες #2 στο εργαστήριο",
+    "Ο οποίος ψήφισε το draft στο meeting δεν ήρθε καθόλου",
+]
+
+
+def _targeted_fixture(tmp_path):
+    lines = []
+    for i, text in enumerate(TARGETED_TEXTS, start=1):
+        lines.append(f"# sent_id = {i}")
+        lines.append(f"# text = {text}")
+        lines.append("1\tλέξη\tλέξη\t_\t_\t_\t0\troot\t_\t_")
+        lines.append("")
+    path = tmp_path / "targeted.conllu"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_load_targeted_sentences_keeps_construction_bearing_any_length(tmp_path):
+    path = _targeted_fixture(tmp_path)
+    texts = load_targeted_sentences(path=path)
+    assert texts == [TARGETED_TEXTS[0], TARGETED_TEXTS[1]]
+    assert len(texts[0].split()) >= 20
+    assert len(texts[1].split()) == 3
+
+
+def test_load_targeted_sentences_honours_explicit_forms(tmp_path):
+    path = _targeted_fixture(tmp_path)
+    assert load_targeted_sentences(path=path, forms={"ήρθαν"}) == [TARGETED_TEXTS[1]]
+
+
+class TargetedStubChecker:
+    def __init__(self, rules_by_text):
+        self._damp_stats = {"suppressed": 0, "fired": 0}
+        self.batches = []
+        self.rules_by_text = rules_by_text
+
+    def check_batch(self, texts, batch_size=32):
+        texts = list(texts)
+        self.batches.append(texts)
+        return [
+            [Violation(t, r, "targeted", 0, 4) for r in self.rules_by_text.get(t, [])]
+            for t in texts
+        ]
+
+
+def test_run_eval_targeted_section_reports_per_rule_recall(monkeypatch):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    rel_sentence = "Ο άντρας ο οποίος μίλησε χθες ήταν ήρεμος"
+    num_sentence = "τρεις κορίτσια τραγούδησαν χθες"
+    monkeypatch.setattr(
+        harness,
+        "load_targeted_sentences",
+        lambda path=None, forms=None: [rel_sentence, num_sentence],
+    )
+    rel_corrupted, rel_target = harness.corrupt_rel_agreement(rel_sentence, random.Random(0))
+    num_corrupted, num_target = harness.corrupt_num_noun(num_sentence, random.Random(0))
+    assert {rel_target, num_target} <= set(harness.TARGET_RULES)
+
+    checker = TargetedStubChecker({rel_corrupted: ["rel_agreement"]})
+    report = run_eval(checker=checker)
+
+    assert checker.batches == [TEXTS, [rel_corrupted, num_corrupted]]
+    section = report.split("targeted recall (construction pool):\n")[1]
+    lines = []
+    for ln in section.splitlines():
+        if not ln.strip():
+            break
+        lines.append(ln)
+    assert lines == ["  num_noun     0/1  (0%)", "  rel_agreement 1/1  (100%)"]
+
+
+def test_run_eval_empty_targeted_pool_prints_none(monkeypatch):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
+    report = run_eval(checker=EmptyChecker())
+    assert "targeted recall (construction pool):\n  none" in report
 
 
 def _load_sweep456():

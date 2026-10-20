@@ -89,8 +89,10 @@ Newly surfaced gaps:
        form** (`τρεις`/`τέσσερις` → M/F, `τρία`/`τέσσερα` → N) and only trusts the
        noun's gender (via the same lemma-attestation resolver as `adj_noun`).
        0 FP on clean text (148 eval + 456 full test, via the analyzer). Recall
-       not in the corruption pool (no gendered numeral in the 4–15-token pool),
-       so it is validated by targeted integration tests, like `rel_agreement`.
+       not in the random corruption pool (no gendered numeral in the 4–15-token
+       pool), so it is validated by targeted integration tests, like
+       `rel_agreement`; now measurable via the v0.0.25 construction-targeted
+       pool (6 num_noun corruptions; numbers pending a model run).
 - [ ] Numeral/noun agreement quirks (δύο + plural verb etc.)
 - [ ] Adjective position classes (attributive vs predicative)
 
@@ -165,9 +167,13 @@ Newly surfaced gaps:
       tagger-suspect tokens are suppressed. **0 FP** on clean UD-GDT text
 - [x] Model-free unit tests (fake trees, incl. the PP walk-up path) + stanza
       integration tests (correct vs. wrong-gender relative clauses)
-- [ ] Eval recall not yet measured: the corruption pool is filtered to 4–15
+- [x] Eval recall now measurable: the corruption pool is filtered to 4–15
       tokens, which excludes almost every relative clause, so `corrupt_rel_agreement`
-      has no samples. Needs a longer-sentence pool or a dedicated relcl sub-corpus
+      had no samples. Shipped the dedicated construction-targeted sub-corpus
+      (`load_targeted_sentences`, any length, REL_FLIP/NUM_FLIP forms + the
+      Greek-ratio/@/# hygiene filters) and a targeted recall pass in `run_eval`
+      (v0.0.25): 23 UD-GDT sentences → 17 rel_agreement + 6 num_noun
+      corruptions. Recall numbers pending a model run
 
 ## v0.0.9 — Export self-check
 
