@@ -222,6 +222,23 @@ def test_eval_non_utf8_path_reports_clean_error(monkeypatch, tmp_path, capsys):
     assert "Traceback" not in captured.err
 
 
+def test_eval_non_utf8_targeted_path_reports_clean_error(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
+    monkeypatch.setattr(
+        "cadmus.eval.harness.load_clean_sentences",
+        lambda limit, path=None: ["Ο σκύλος τρέχει γρήγορα στο πάρκο"],
+    )
+    path = tmp_path / "bad.conllu"
+    path.write_bytes(b"# text = \xff\xfe\x00garbage\n")
+    rc = cli.main(["eval", "--targeted-path", str(path)])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "cadmus: error:" in captured.err
+    assert "invalid utf-8" in captured.err
+    assert str(path) in captured.err
+    assert "Traceback" not in captured.err
+
+
 def test_eval_no_targeted_ignores_missing_targeted_path(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
     monkeypatch.setattr(
