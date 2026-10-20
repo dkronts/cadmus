@@ -34,8 +34,8 @@ def _strict_results(texts, results):
     return zip(texts, results)
 
 
-def load_clean_sentences(limit):
-    path = ensure_asset("el_gdt-ud-test.conllu")
+def load_clean_sentences(limit, path=None):
+    path = path or ensure_asset("el_gdt-ud-test.conllu")
     out = []
     block = []
     text = None
@@ -162,7 +162,7 @@ def run_sweep(checker=None, verbose=False, path=None):
     return "\n".join(lines)
 
 
-def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targeted_path=None):
+def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targeted_path=None, path=None):
     """False-positive scan on clean text plus recall on injected errors.
 
     When verbose, printed output is ordered: false-positive violation lines
@@ -172,9 +172,11 @@ def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targete
 
     targeted=False skips the construction-pool recall pass entirely and omits
     its report section; targeted_path overrides the conllu asset it loads.
+    path overrides the conllu asset loaded for the FP scan and random recall
+    pass.
     """
     checker = checker or CadmusChecker()
-    sentences = load_clean_sentences(n)
+    sentences = load_clean_sentences(n, path=path)
     rng = random.Random(seed)
 
     if verbose:

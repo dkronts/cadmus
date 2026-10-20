@@ -157,7 +157,7 @@ def test_run_sweep_raises_when_checker_returns_short_results(monkeypatch):
 
 
 def test_run_eval_fp_tally_uses_check_batch(monkeypatch):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     stub = StubChecker()
@@ -188,7 +188,7 @@ class RecallStubChecker:
 
 
 def _recall_report(monkeypatch, checker, corrupt_map, verbose=False):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: corrupt_map.get(s))
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     return run_eval(checker=checker, verbose=verbose)
@@ -220,7 +220,7 @@ def test_run_eval_verbose_prints_miss_line(monkeypatch, capsys):
 
 
 def test_run_eval_verbose_groups_fp_and_recall_sections(monkeypatch, capsys):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     corrupt_map = {s: (s + " αβγ", "negation") for s in TEXTS}
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: corrupt_map.get(s))
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
@@ -246,7 +246,7 @@ def test_run_eval_empty_recall_prints_none(monkeypatch):
 
 
 def test_run_eval_verbose_empty_fp_prints_none(monkeypatch, capsys):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     run_eval(checker=EmptyChecker(), verbose=True)
@@ -321,7 +321,7 @@ class TargetedStubChecker:
 
 
 def test_run_eval_targeted_section_reports_per_rule_recall(monkeypatch):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     rel_sentence = "Ο άντρας ο οποίος μίλησε χθες ήταν ήρεμος"
     num_sentence = "τρεις κορίτσια τραγούδησαν χθες"
@@ -348,7 +348,7 @@ def test_run_eval_targeted_section_reports_per_rule_recall(monkeypatch):
 
 
 def test_run_eval_empty_targeted_pool_prints_none(monkeypatch):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     report = run_eval(checker=EmptyChecker())
@@ -356,7 +356,7 @@ def test_run_eval_empty_targeted_pool_prints_none(monkeypatch):
 
 
 def test_run_eval_verbose_prints_targeted_miss_line(monkeypatch, capsys):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: [])
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: [])
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     rel_sentence = "Ο άντρας ο οποίος μίλησε χθες ήταν ήρεμος"
     monkeypatch.setattr(
@@ -372,7 +372,7 @@ def test_run_eval_verbose_prints_targeted_miss_line(monkeypatch, capsys):
 
 
 def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     run_eval(checker=EmptyChecker(), verbose=True)
@@ -386,7 +386,7 @@ def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
 
 
 def test_run_eval_verbose_targeted_false_omits_header(monkeypatch, capsys):
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
     run_eval(checker=EmptyChecker(), verbose=True, targeted=False)
@@ -404,7 +404,7 @@ def test_run_eval_targeted_false_skips_load_and_section(monkeypatch):
         recorded.append(path)
         return []
 
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", recorder)
     report = run_eval(checker=EmptyChecker(), targeted=False)
@@ -420,12 +420,41 @@ def test_run_eval_forwards_targeted_path(monkeypatch):
         recorded.append(path)
         return []
 
-    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
     monkeypatch.setattr(harness, "load_targeted_sentences", recorder)
     run_eval(checker=EmptyChecker(), targeted_path="other/file.conllu")
 
     assert recorded == ["other/file.conllu"]
+
+
+CLEAN_TEXTS = [
+    "Τρεις λέξεις εδώ τρέχουν",
+    "Η γάτα κάθεται πάνω στον καναπέ",
+    "Οι φίλοι μου παίζουν ποδόσφαιρο κάθε απόγευμα",
+]
+
+
+def _clean_fixture(tmp_path):
+    lines = []
+    for i, text in enumerate(CLEAN_TEXTS, start=1):
+        lines.append(f"# sent_id = {i}")
+        lines.append(f"# text = {text}")
+        lines.append("1\tλέξη\tλέξη\t_\t_\t_\t0\troot\t_\t_")
+        lines.append("")
+    path = tmp_path / "clean.conllu"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_run_eval_forwards_path_to_load_clean_sentences(tmp_path, monkeypatch):
+    path = _clean_fixture(tmp_path)
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    stub = StubChecker()
+    report = run_eval(n=3, checker=stub, path=path, targeted=False)
+
+    assert stub.batches == [CLEAN_TEXTS]
+    assert "3 clean sentences" in report
 
 
 def _load_sweep456():
