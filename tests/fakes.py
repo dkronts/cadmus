@@ -41,7 +41,7 @@ class FakeLexicon:
         return self.det_genders.get(word.text.lower())
 
     def resolve_gender(self, word):
-        g = self.noun_genders.get(word.lemma)
+        g = self.noun_gender(word.lemma)
         if g:
             return g
         feats = word.feats or ''

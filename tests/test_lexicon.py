@@ -1,6 +1,7 @@
 import io
 
 from cadmus.lexicon import FormLexicon, VerbFrames
+from fakes import FakeLexicon
 
 MINI = """# sent_id = mini-1
 # text = Ο σκύλος τρώει το φαγητό
@@ -61,6 +62,16 @@ def test_noun_gender_returns_attested_gender(tmp_path):
     assert lex.noun_gender("αόρατο") is None
     assert lex.noun_gender(None) is None
     assert lex.noun_gender("") is None
+
+
+def test_resolve_gender_none_lemma_parity():
+    class _W:
+        text, lemma, feats = "το", None, ""
+
+    fake = FakeLexicon(noun_genders={"": "Masc"})
+    real = FormLexicon({}, {"": "Masc"})
+    assert fake.resolve_gender(_W()) == "Masc"
+    assert fake.resolve_gender(_W()) == real.resolve_gender(_W())
 
 
 def test_verb_frames_build(tmp_path):
