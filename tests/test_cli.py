@@ -12,7 +12,7 @@ class StubChecker:
     def __init__(self, *args, **kwargs):
         pass
 
-    def check(self, text):
+    def check(self, text, deep=False):
         return []
 
     def check_batch(self, texts, batch_size=32):
@@ -182,7 +182,7 @@ def _open_recorder(monkeypatch):
     return opened
 
 
-@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose"])
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose", "check"])
 def test_path_file_handles_are_closed(monkeypatch, tmp_path, cmd):
     opened = _open_recorder(monkeypatch)
     path = tmp_path / "texts.txt"
@@ -193,7 +193,7 @@ def test_path_file_handles_are_closed(monkeypatch, tmp_path, cmd):
     assert all(handle.closed for handle in opened)
 
 
-@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose"])
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose", "check"])
 def test_stdin_is_not_closed(monkeypatch, capsys, cmd):
     stdin = io.StringIO("clean line\n")
     monkeypatch.setattr(cli.sys, "stdin", stdin)
