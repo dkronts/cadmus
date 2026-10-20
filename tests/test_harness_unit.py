@@ -385,6 +385,17 @@ def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
     assert fp_header < recall_header < targeted_header
 
 
+def test_run_eval_verbose_targeted_header_names_targeted_path(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
+    run_eval(checker=EmptyChecker(), verbose=True, targeted_path="/tmp/alt_pool.conllu")
+    out = capsys.readouterr().out
+
+    assert "targeted recall (alt_pool.conllu):" in out
+    assert "targeted recall (construction pool):" not in out
+
+
 def test_run_eval_verbose_targeted_false_omits_header(monkeypatch, capsys):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n, path=None: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
