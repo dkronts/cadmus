@@ -125,6 +125,10 @@ class CadmusChecker:
             docs = self._iter_docs([shadow for shadow, _ in normalized])
             for orig, (_, mapper), doc in zip(chunk, normalized, docs):
                 results.append(self._analyze(orig, doc, mapper))
+        if len(results) != len(texts):
+            raise ValueError(
+                f"pipeline returned {len(results)} results for {len(texts)} texts"
+            )
         return results
 
     def _iter_docs(self, texts):

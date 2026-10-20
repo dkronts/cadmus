@@ -1,5 +1,15 @@
+import pytest
+
 from cadmus.checker import CadmusChecker
-from fakes import FakeNLP, FakeNLPProcessMany
+from fakes import FakeDoc, FakeNLP, FakeNLPProcessMany
+
+
+class ShortPipeNLP(FakeNLP):
+    """pipe() yields one fewer doc than the input, as a truncating pipeline would."""
+
+    def pipe(self, texts):
+        self.pipe_calls += 1
+        return [FakeDoc(t) for t in texts][:-1]
 
 
 def _checker():
@@ -42,3 +52,9 @@ def test_check_batch_falls_back_to_process_many():
     assert len(out) == 4
     assert nlp.process_many_calls == 2  # ceil(4 / 3)
     assert nlp.call_count == 0
+
+
+def test_check_batch_raises_when_pipeline_returns_too_few_docs():
+    checker = CadmusChecker(nlp=ShortPipeNLP(), use_lexicon=False)
+    with pytest.raises(ValueError):
+        checker.check_batch(["Ένα.", "Δύο.", "Τρία."])
