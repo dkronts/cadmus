@@ -143,7 +143,11 @@ def main(argv=None):
                               path=args.path)
         except (OSError, UnicodeDecodeError) as exc:
             path = getattr(exc, "filename", None) or args.path or args.targeted_path
-            if isinstance(exc, UnicodeDecodeError):
+            if path is None:
+                reason = (getattr(exc, "strerror", None) or getattr(exc, "reason", None)
+                          or (exc.args[0] if exc.args else None) or "unknown error")
+                line = f"could not read the UD-GDT asset: {reason}"
+            elif isinstance(exc, UnicodeDecodeError):
                 line = f"invalid utf-8: {path}"
             else:
                 line = _read_error_line(path, exc)

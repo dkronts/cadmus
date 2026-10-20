@@ -239,6 +239,38 @@ def test_eval_non_utf8_targeted_path_reports_clean_error(monkeypatch, tmp_path, 
     assert "Traceback" not in captured.err
 
 
+def test_eval_asset_unicode_error_without_path_names_asset(monkeypatch, capsys):
+    monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
+
+    def boom(limit, path=None):
+        raise UnicodeDecodeError("utf-8", b"", 0, 1, "bad")
+
+    monkeypatch.setattr("cadmus.eval.harness.load_clean_sentences", boom)
+    rc = cli.main(["eval"])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "None" not in captured.err
+    assert "Traceback" not in captured.err
+    assert "UD-GDT asset" in captured.err
+
+
+def test_eval_asset_oserror_without_path_names_asset(monkeypatch, capsys):
+    monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
+
+    def boom(limit, path=None):
+        exc = OSError("boom")
+        exc.filename = None
+        raise exc
+
+    monkeypatch.setattr("cadmus.eval.harness.load_clean_sentences", boom)
+    rc = cli.main(["eval"])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "None" not in captured.err
+    assert "Traceback" not in captured.err
+    assert "UD-GDT asset" in captured.err
+
+
 def test_eval_no_targeted_ignores_missing_targeted_path(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr("cadmus.eval.harness.CadmusChecker", StubChecker)
     monkeypatch.setattr(
