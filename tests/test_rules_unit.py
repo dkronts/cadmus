@@ -810,3 +810,15 @@ def test_analyze_det_noun_suspect_head_dampened_and_counts():
     violations = ck._analyze(text, doc)
     assert violations == []
     assert ck._damp_stats == {"suppressed": 1, "fired": 0}
+
+
+def test_analyze_det_noun_suspect_det_non_suspect_head_fires():
+    # suspect DET but non-suspect head: the det_noun branch returns False at
+    # checker.py:218 (head not suspect), never reaching the generic
+    # is_suspect(w) path at checker.py:220, so the violation fires
+    text, doc = _det_noun_stats_doc()
+    ck = _stats_checker(FakeLexicon(det_genders={"τους": "Masc"}, suspect_ids={1}))
+    violations = ck._analyze(text, doc)
+    assert len(violations) == 1
+    assert violations[0].rule == "det_noun"
+    assert ck._damp_stats == {"suppressed": 0, "fired": 1}
