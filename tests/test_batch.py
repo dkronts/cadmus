@@ -79,3 +79,17 @@ def test_check_batch_error_names_a_later_truncating_chunk():
     checker = CadmusChecker(nlp=ShortLastChunkNLP(), use_lexicon=False)
     with pytest.raises(ValueError, match=r"chunk 2 \(texts 4\.\.4\) of 5 texts"):
         checker.check_batch(["α.", "β.", "γ.", "δ.", "ε."], batch_size=2)
+
+
+def test_check_batch_rejects_zero_batch_size():
+    checker, _ = _checker()
+    with pytest.raises(ValueError, match="batch_size must be >= 1") as excinfo:
+        checker.check_batch(["Ένα.", "Δύο."], batch_size=0)
+    assert "must not be zero" not in str(excinfo.value)
+
+
+def test_check_batch_rejects_negative_batch_size():
+    checker, _ = _checker()
+    with pytest.raises(ValueError, match="batch_size must be >= 1") as excinfo:
+        checker.check_batch(["Ένα.", "Δύο."], batch_size=-3)
+    assert "must not be zero" not in str(excinfo.value)

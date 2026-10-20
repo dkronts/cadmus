@@ -118,6 +118,8 @@ class CadmusChecker:
         (stanza <=1.15) batch APIs, falling back to per-text calls.
         """
         texts = list(texts)
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         results = []
         for chunk_idx, i in enumerate(range(0, len(texts), batch_size)):
             chunk = texts[i:i + batch_size]
