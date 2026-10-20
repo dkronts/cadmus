@@ -385,6 +385,18 @@ def test_run_eval_verbose_empty_targeted_prints_none(monkeypatch, capsys):
     assert fp_header < recall_header < targeted_header
 
 
+def test_run_eval_verbose_targeted_false_omits_header(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    monkeypatch.setattr(harness, "load_targeted_sentences", lambda path=None, forms=None: [])
+    run_eval(checker=EmptyChecker(), verbose=True, targeted=False)
+    out = capsys.readouterr().out
+
+    assert "targeted recall (construction pool):" not in out
+    assert "false positives on clean text:" in out
+    assert "recall on injected errors:" in out
+
+
 def test_run_eval_targeted_false_skips_load_and_section(monkeypatch):
     recorded = []
 
