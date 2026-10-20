@@ -126,12 +126,10 @@ class FormLexicon:
         return self.noun_genders.get(lemma or "")
 
     def resolve_gender(self, word):
-        attested = self.noun_genders.get(word.lemma or "")
+        attested = self.noun_gender(word.lemma)
         feats = _word_feats(word)
         if not attested:
             return feats.get("Gender")
-        if feats.get("Gender") == attested:
-            return attested
         return attested
 
     def resolve_det_gender(self, word):
