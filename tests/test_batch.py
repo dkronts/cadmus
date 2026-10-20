@@ -21,6 +21,24 @@ class ShortLastChunkNLP(FakeNLP):
         return docs[:-1] if len(texts) == 1 else docs
 
 
+class LongPipeNLP(FakeNLP):
+    """pipe() yields one extra doc (a duplicate of the last), as an over-producing pipeline would."""
+
+    def pipe(self, texts):
+        self.pipe_calls += 1
+        docs = [FakeDoc(t) for t in texts]
+        return docs + docs[-1:]
+
+
+class LongSecondChunkNLP(FakeNLP):
+    """pipe() duplicates the last doc only on the second pipe() call."""
+
+    def pipe(self, texts):
+        self.pipe_calls += 1
+        docs = [FakeDoc(t) for t in texts]
+        return docs + docs[-1:] if self.pipe_calls == 2 else docs
+
+
 def _checker():
     nlp = FakeNLP()
     return CadmusChecker(nlp=nlp, use_lexicon=False), nlp
@@ -79,6 +97,18 @@ def test_check_batch_error_names_a_later_truncating_chunk():
     checker = CadmusChecker(nlp=ShortLastChunkNLP(), use_lexicon=False)
     with pytest.raises(ValueError, match=r"chunk 2 \(texts 4\.\.4\) of 5 texts"):
         checker.check_batch(["α.", "β.", "γ.", "δ.", "ε."], batch_size=2)
+
+
+def test_check_batch_raises_when_pipeline_returns_too_many_docs():
+    checker = CadmusChecker(nlp=LongPipeNLP(), use_lexicon=False)
+    with pytest.raises(ValueError, match="more than 3 results for chunk 0"):
+        checker.check_batch(["Ένα.", "Δύο.", "Τρία."])
+
+
+def test_check_batch_error_names_the_over_producing_chunk():
+    checker = CadmusChecker(nlp=LongSecondChunkNLP(), use_lexicon=False)
+    with pytest.raises(ValueError, match=r"chunk 1 \(texts 2\.\.3\) of 4 texts"):
+        checker.check_batch(["α.", "β.", "γ.", "δ."], batch_size=2)
 
 
 def test_check_batch_rejects_zero_batch_size():

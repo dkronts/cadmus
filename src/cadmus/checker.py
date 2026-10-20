@@ -126,8 +126,14 @@ class CadmusChecker:
             normalized = [normalize_for_analysis(t) for t in chunk]
             docs = self._iter_docs([shadow for shadow, _ in normalized])
             consumed = 0
-            for orig, (_, mapper), doc in zip(chunk, normalized, docs):
-                results.append(self._analyze(orig, doc, mapper))
+            for doc in docs:
+                if consumed == len(chunk):
+                    raise ValueError(
+                        f"pipeline returned more than {len(chunk)} results for "
+                        f"chunk {chunk_idx} (texts {i}..{i + len(chunk) - 1}) "
+                        f"of {len(texts)} texts"
+                    )
+                results.append(self._analyze(chunk[consumed], doc, normalized[consumed][1]))
                 consumed += 1
             if consumed < len(chunk):
                 raise ValueError(
