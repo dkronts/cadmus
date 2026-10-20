@@ -1,3 +1,4 @@
+import errno
 import functools
 import io
 import json
@@ -248,4 +249,28 @@ def test_non_utf8_input_reports_clean_error(tmp_path, capsys, cmd):
     captured = capsys.readouterr()
     assert rc == 2
     assert "cadmus: error:" in captured.err
+    assert "Traceback" not in captured.err
+
+
+@pytest.mark.parametrize("cmd", ["batch", "watch", "diagnose", "check"])
+def test_read_error_reports_clean_error(monkeypatch, tmp_path, capsys, cmd):
+    path = tmp_path / "texts.txt"
+    path.write_text("clean line\n", encoding="utf-8")
+    real_open = open
+
+    def failing_open(*args, **kwargs):
+        handle = real_open(*args, **kwargs)
+
+        def fail_read(*a, **k):
+            raise OSError(errno.EIO, "Input/output error")
+
+        monkeypatch.setattr(handle, "read", fail_read)
+        return handle
+
+    monkeypatch.setattr("builtins.open", failing_open)
+    rc = cli.main([cmd, str(path)])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "cadmus: error:" in captured.err
+    assert str(path) in captured.err
     assert "Traceback" not in captured.err

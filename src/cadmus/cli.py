@@ -33,7 +33,7 @@ def _open_input(path):
         return None
     try:
         data = handle.read()
-    except UnicodeDecodeError as exc:
+    except (UnicodeDecodeError, OSError) as exc:
         handle.close()
         print(f"cadmus: error: {path}: {exc}", file=sys.stderr)
         return None
