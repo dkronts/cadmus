@@ -45,11 +45,11 @@ forward.
 |---|---|---|
 | negation (δεν/μην) | 100% | |
 | typography | 100% | text-level |
-| script_mix | 96% | |
-| accent | 95% | |
-| nonword | 88% | PROPN misses dominate |
-| propn_accent | 62% | inflected/foreign names silent by design |
-| det_noun (article swap) | 68% | stanza "repairs" the corrupted article |
+| script_mix | 95% | |
+| accent | 87% | |
+| nonword | 96% | PROPN misses dominate |
+| propn_accent | 78% | inflected/foreign names silent by design |
+| det_noun (article swap) | 58% | stanza "repairs" the corrupted article |
 | rel_agreement / num_noun | pending | construction-targeted pool (17/6 corruptions); awaiting model run |
 | copula_pred / na_form | n/a | no pool samples; targeted probes |
 
