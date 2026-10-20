@@ -224,10 +224,11 @@ def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targete
                 tgt_counts[target][1] += 1
                 tgt_pairs.append((corrupted, target))
 
+        tgt_label = os.path.basename(targeted_path) if targeted_path else "construction pool"
         tgt_texts = [c for c, _ in tgt_pairs]
         tgt_results = checker.check_batch(tgt_texts) if tgt_pairs else []
         if verbose:
-            print("targeted recall (construction pool):")
+            print(f"targeted recall ({tgt_label}):")
         if verbose and not tgt_pairs:
             print("  none")
         for i, (corrupted, violations) in enumerate(_strict_results(tgt_texts, tgt_results)):
@@ -257,7 +258,7 @@ def run_eval(n=100, seed=42, verbose=False, checker=None, targeted=True, targete
         lines.append(f"  {target:12} {hit}/{tot}  ({pct:.0f}%)")
     if targeted:
         lines.append("")
-        lines.append("targeted recall (construction pool):")
+        lines.append(f"targeted recall ({tgt_label}):")
         if not tgt_counts:
             lines.append("  none")
         for target in sorted(tgt_counts):

@@ -476,6 +476,22 @@ def test_run_eval_report_header_defaults_to_ud_gdt(monkeypatch):
     assert "UD-GDT test" in report.splitlines()[0]
 
 
+def _targeted_header(report):
+    return [ln for ln in report.splitlines() if ln.startswith("targeted recall")][0]
+
+
+def test_run_eval_targeted_section_names_targeted_path(monkeypatch):
+    report = _header_report(monkeypatch, targeted_path="/tmp/alt_pool.conllu")
+    header = _targeted_header(report)
+    assert "alt_pool.conllu" in header
+    assert "construction pool" not in header
+
+
+def test_run_eval_targeted_section_defaults_to_construction_pool(monkeypatch):
+    report = _header_report(monkeypatch)
+    assert "construction pool" in _targeted_header(report)
+
+
 def _load_sweep456():
     script_path = Path(__file__).resolve().parent.parent / "scripts" / "sweep456.py"
     spec = importlib.util.spec_from_file_location("sweep456", script_path)
