@@ -2,6 +2,7 @@
 
 import importlib.util
 import random
+import sys
 from pathlib import Path
 
 import pytest
@@ -510,6 +511,12 @@ def _load_sweep456():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def test_sweep456_import_does_not_mutate_sys_path():
+    before = list(sys.path)
+    _load_sweep456()
+    assert sys.path == before
 
 
 def test_sweep456_main_forwards_args(monkeypatch):

@@ -2,10 +2,6 @@
 """Full 456-sentence clean sweep: every '# text =' line of the UD-GDT test set."""
 
 import argparse
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from cadmus.eval import harness
 
