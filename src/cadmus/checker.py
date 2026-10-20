@@ -142,11 +142,6 @@ class CadmusChecker:
                     f"pipeline returned {consumed} results for chunk {chunk_idx} "
                     f"(texts {i}..{i + len(chunk) - 1}) of {len(texts)} texts"
                 )
-        if len(results) != len(texts):
-            raise ValueError(
-                f"pipeline returned {len(results)} results for {len(texts)} texts "
-                f"(chunk {len(results) // batch_size})"
-            )
         return results
 
     def _iter_docs(self, texts):
