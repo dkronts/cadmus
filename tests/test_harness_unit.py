@@ -236,6 +236,20 @@ def test_run_eval_empty_fp_prints_none(monkeypatch):
     assert "false positives on clean text:\n  none" in report
 
 
+def test_run_eval_verbose_empty_fp_prints_none(monkeypatch, capsys):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    run_eval(checker=EmptyChecker(), verbose=True)
+    out = capsys.readouterr().out
+    assert "false positives on clean text:\n  none" in out
+
+
+def test_run_eval_verbose_empty_recall_prints_none(monkeypatch, capsys):
+    _recall_report(monkeypatch, EmptyChecker(), {}, verbose=True)
+    out = capsys.readouterr().out
+    assert "recall on injected errors:\n  none" in out
+
+
 def test_run_eval_recall_raises_when_checker_returns_short_results(monkeypatch):
     corrupted = TEXTS[0] + " ληθ"
     with pytest.raises(ValueError, match="checker returned 0 results for 1 inputs"):

@@ -125,7 +125,8 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
 
     When verbose, printed output is ordered: false-positive violation lines
     first, then recall MISS lines, each group under its own section header
-    mirroring the report headings.
+    mirroring the report headings. Empty verbose sections print a '  none'
+    marker mirroring the report.
     """
     checker = checker or CadmusChecker()
     sentences = load_clean_sentences(n)
@@ -136,6 +137,8 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
     fp_counts, fp_samples = sweep_tally(
         _strict_results(sentences, checker.check_batch(sentences)), verbose=verbose
     )
+    if verbose and not fp_counts:
+        print("  none")
 
     rec_counts = defaultdict(lambda: [0, 0])
     pairs = []
@@ -151,6 +154,8 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
     results = checker.check_batch(corrupted_texts) if pairs else []
     if verbose:
         print("recall on injected errors:")
+    if verbose and not pairs:
+        print("  none")
     for i, (corrupted, violations) in enumerate(_strict_results(corrupted_texts, results)):
         target = pairs[i][1]
         fired = {v.rule for v in violations}
