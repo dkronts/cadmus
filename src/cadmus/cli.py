@@ -18,24 +18,28 @@ def _positive_int(value):
     return n
 
 
+def _read_error_line(path, exc):
+    code = getattr(exc, "errno", None)
+    if code == errno.ENOENT:
+        return f"no such file: {path}"
+    if code == errno.EISDIR:
+        return f"is a directory: {path}"
+    if code == errno.EACCES:
+        return f"permission denied: {path}"
+    return f"{path}: {exc}"
+
+
 def _open_input(path):
     try:
         handle = open(path, encoding="utf-8")
     except OSError as exc:
-        if exc.errno == errno.ENOENT:
-            print(f"cadmus: error: no such file: {path}", file=sys.stderr)
-        elif exc.errno == errno.EISDIR:
-            print(f"cadmus: error: is a directory: {path}", file=sys.stderr)
-        elif exc.errno == errno.EACCES:
-            print(f"cadmus: error: permission denied: {path}", file=sys.stderr)
-        else:
-            print(f"cadmus: error: {exc}", file=sys.stderr)
+        print(f"cadmus: error: {_read_error_line(path, exc)}", file=sys.stderr)
         return None
     try:
         data = handle.read()
     except (UnicodeDecodeError, OSError) as exc:
         handle.close()
-        print(f"cadmus: error: {path}: {exc}", file=sys.stderr)
+        print(f"cadmus: error: {_read_error_line(path, exc)}", file=sys.stderr)
         return None
     handle.close()
     return io.StringIO(data)
@@ -137,8 +141,13 @@ def main(argv=None):
             report = run_eval(n=args.n, seed=args.seed, verbose=args.verbose,
                               targeted=args.targeted, targeted_path=args.targeted_path,
                               path=args.path)
-        except OSError as exc:
-            print(f"cadmus: error: {exc}", file=sys.stderr)
+        except (OSError, UnicodeDecodeError) as exc:
+            path = getattr(exc, "filename", None) or args.path or args.targeted_path
+            if isinstance(exc, UnicodeDecodeError):
+                line = f"invalid utf-8: {path}"
+            else:
+                line = _read_error_line(path, exc)
+            print(f"cadmus: error: {line}", file=sys.stderr)
             return 2
         print(report)
         return 0
