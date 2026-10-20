@@ -10,7 +10,7 @@ re-measure, don't trust.
 - Rules: 12 shipped — `det_noun`, `adj_noun`, `subj_verb`, `rel_agreement`,
   `copula_pred`, `na_form`, `num_noun`, `prep_case`, `spelling`,
   `verb_valence`, `negation`, `propn_accent` — plus text-level `typography`.
-- Tests: 89 collected (67 model-free in the CI subset), all green.
+- Tests: 177 collected (120 model-free in the CI subset), all green.
 - Eval (UD-GDT clean test, fixed seed): recall — accents 95%, script-mix 96%,
   non-words 88%, proper-noun accent 62%, wrong article 68%, δεν/μην 100%,
   typography 100%. `copula_pred`, `na_form` have no corruption-pool samples —
