@@ -17,7 +17,7 @@ jobs:
           cache-dependency-path: pyproject.toml
       - run: pip install spylls pytest
       - run: pip install -e . --no-deps
-      - run: pytest tests/test_rules_unit.py tests/test_corruptions.py tests/test_lexicon.py tests/test_export.py tests/test_stream.py tests/test_diagnostics.py tests/test_morphology_unit.py tests/test_batch.py tests/test_normalize.py -q
+      - run: pytest tests/test_rules_unit.py tests/test_corruptions.py tests/test_lexicon.py tests/test_export.py tests/test_stream.py tests/test_diagnostics.py tests/test_morphology_unit.py tests/test_batch.py tests/test_normalize.py tests/test_harness_unit.py -q
 
   integration:
     if: github.event_name == 'workflow_dispatch'
