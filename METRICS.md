@@ -80,8 +80,10 @@ recall, construction-targeted recall); do not treat the overlap as a bug.
   Gender noise + dual-usage nouns like
   «Υπουργός» — form-level Gender gating measured and REJECTED twice:
   unconditional gate costs pool recall 58→38% (v0.0.17); suspect-head
-  disjoint-evidence gate measured inert (19→19 FP, recall 58% held — all
-  18 clean-sweep Gender mismatches have non-suspect heads); a
+  disjoint-evidence gate measured inert (19→19 FP, recall 58% held — 17 of
+  18 clean-sweep Gender mismatches have non-suspect heads; the 18th
+  («του»[Masc] vs «Μάλι»[Neut]) has a suspect head whose lemma gender is
+  unresolved and is already damped by `checker._dampened`); a
   tagger-quality ceiling. `FormLexicon.form_gender` kept dormant+tested
   (nominal_cases precedent) for any future consumer)
 - prep_case residue is 1/456 (από + παραλίες tagged Nom); the dormant

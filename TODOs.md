@@ -234,11 +234,14 @@ Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
       clean sweep det_noun FP **19 → 19** (identical flag lists gate ON vs
       OFF; every other rule unchanged), fixed-seed corruption eval (n=100,
       seed 42) det recall **58% → 58%** (14/24), pool FP identical
-      (det_noun 3, spelling 1). Instrumented trace: all 18 clean-sweep
+      (det_noun 3, spelling 1). Instrumented trace: 17 of 18 clean-sweep
       Gender mismatches reach the gate with a **non-suspect** head — the
       tagger's analysis is attested («Υπουργός»×4, «βουλευτή»,
-      «αντιπροσώποι», «βήμα»…) or the form is unseen («πρόποδες») — so the
-      suspect+resolved population the gate targets is empty on real data.
+      «αντιπροσώποι», «βήμα»…) or the form is unseen («πρόποδες»); the 18th
+      («του» vs «Μάλι») has a suspect head whose lemma gender is unresolved
+      and is already damped upstream by `checker._dampened`, never entering
+      that population — so the suspect+resolved population the gate targets
+      is empty on real data.
       The unconditional Gender-gate variant was already measured at 58→38
       recall (v0.0.17). Both variants dead: the Gender residue is a
       confirmed tagger-quality ceiling. The `agreement.py` gate was
