@@ -38,7 +38,13 @@ class FakeLexicon:
         return self.det_genders.get(word.text.lower())
 
     def resolve_gender(self, word):
-        return self.noun_genders.get(word.lemma) or (word.feats or "").split("Gender=")[-1].split("|")[0] if "Gender=" in (word.feats or "") else None
+        g = self.noun_genders.get(word.lemma)
+        if g:
+            return g
+        feats = word.feats or ''
+        if 'Gender=' in feats:
+            return feats.split('Gender=')[-1].split('|')[0]
+        return None
 
     def is_suspect(self, word):
         return word.id in self.suspect_ids

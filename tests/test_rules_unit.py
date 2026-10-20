@@ -538,6 +538,19 @@ def test_num_noun_uses_lexicon_noun_gender():
     assert num_noun(s, by_id, {"lexicon": lex}) == []
 
 
+def test_num_noun_lemma_gender_resolves_without_feats():
+    # lemma attested as Masc and feats carry no Gender: the lexicon still
+    # resolves the noun's gender (mirrors FormLexicon precedence)
+    words = [
+        FW(1, "τρία", "NUM", "Number=Plur", head=2, deprel="nummod", lemma="τρία"),
+        FW(2, "άνδρες", "NOUN", "Number=Plur", lemma="άνδρας"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(noun_genders={"άνδρας": "Masc"})
+    flags = num_noun(s, by_id, {"lexicon": lex})
+    assert flags and any("Masc" in f[2] for f in flags)
+
+
 def _unknown_dict(monkeypatch, kind="nonword", suggestions=()):
     monkeypatch.setattr(orth_layer, "is_known", lambda t: False)
     monkeypatch.setattr(orth_layer, "classify_unknown", lambda t: (kind, list(suggestions)))
