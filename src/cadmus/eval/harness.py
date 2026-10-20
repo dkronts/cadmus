@@ -25,6 +25,15 @@ TARGET_RULES = {
 }
 
 
+def _strict_results(texts, results):
+    """Pair inputs with checker results, failing loudly if the checker dropped any."""
+    texts = list(texts)
+    results = list(results)
+    if len(results) != len(texts):
+        raise ValueError(f"checker returned {len(results)} results for {len(texts)} inputs")
+    return zip(texts, results)
+
+
 def load_clean_sentences(limit):
     path = ensure_asset("el_gdt-ud-test.conllu")
     out = []
@@ -93,7 +102,9 @@ def run_sweep(checker=None, verbose=False, path=None):
     checker = checker or CadmusChecker()
     sentences = load_sweep_sentences(path=path)
 
-    counts, samples = sweep_tally(zip(sentences, checker.check_batch(sentences)), verbose=verbose)
+    counts, samples = sweep_tally(
+        _strict_results(sentences, checker.check_batch(sentences)), verbose=verbose
+    )
 
     lines = []
     lines.append(f"sweep: {len(sentences)} sentences, full clean sweep (all # text lines)")
@@ -115,7 +126,7 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
     rng = random.Random(seed)
 
     fp_counts, fp_samples = sweep_tally(
-        zip(sentences, checker.check_batch(sentences)), verbose=verbose
+        _strict_results(sentences, checker.check_batch(sentences)), verbose=verbose
     )
 
     rec_counts = defaultdict(lambda: [0, 0])
@@ -128,8 +139,10 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
         rec_counts[target][1] += 1
         pairs.append((corrupted, target))
 
-    results = checker.check_batch([c for c, _ in pairs]) if pairs else []
-    for (corrupted, target), violations in zip(pairs, results):
+    corrupted_texts = [c for c, _ in pairs]
+    results = checker.check_batch(corrupted_texts) if pairs else []
+    for i, (corrupted, violations) in enumerate(_strict_results(corrupted_texts, results)):
+        target = pairs[i][1]
         fired = {v.rule for v in violations}
         if fired & TARGET_RULES.get(target, {target}):
             rec_counts[target][0] += 1

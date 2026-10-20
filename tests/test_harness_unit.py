@@ -3,6 +3,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from cadmus.checker import Violation
 from cadmus.eval import harness
 from cadmus.eval.harness import load_sweep_sentences, run_eval, run_sweep
@@ -74,6 +76,22 @@ class EmptyChecker:
         return [[] for _ in texts]
 
 
+class ShortResultsChecker:
+    """check_batch returns one fewer result than inputs, from short_from_call on."""
+
+    def __init__(self, short_from_call=0):
+        self._damp_stats = {"suppressed": 0, "fired": 0}
+        self.calls = 0
+        self.short_from_call = short_from_call
+
+    def check_batch(self, texts, batch_size=32):
+        results = [[] for _ in texts]
+        if self.calls >= self.short_from_call:
+            results = results[:-1]
+        self.calls += 1
+        return results
+
+
 def test_run_sweep_report_counts_and_dampener(monkeypatch):
     monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
     stub = StubChecker()
@@ -129,6 +147,12 @@ def test_run_sweep_empty_counts_prints_none(monkeypatch):
     monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
     report = run_sweep(checker=EmptyChecker())
     assert "violations on clean text:\n  none" in report
+
+
+def test_run_sweep_raises_when_checker_returns_short_results(monkeypatch):
+    monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
+    with pytest.raises(ValueError, match="checker returned 3 results for 4 inputs"):
+        run_sweep(checker=ShortResultsChecker())
 
 
 def test_run_eval_fp_tally_uses_check_batch(monkeypatch):
@@ -195,6 +219,16 @@ def test_run_eval_verbose_prints_miss_line(monkeypatch, capsys):
 def test_run_eval_empty_fp_prints_none(monkeypatch):
     report = _recall_report(monkeypatch, EmptyChecker(), {})
     assert "false positives on clean text:\n  none" in report
+
+
+def test_run_eval_recall_raises_when_checker_returns_short_results(monkeypatch):
+    corrupted = TEXTS[0] + " ληθ"
+    with pytest.raises(ValueError, match="checker returned 0 results for 1 inputs"):
+        _recall_report(
+            monkeypatch,
+            ShortResultsChecker(short_from_call=1),
+            {TEXTS[0]: (corrupted, "nonword")},
+        )
 
 
 def _load_sweep456():
