@@ -236,6 +236,11 @@ def test_run_eval_empty_fp_prints_none(monkeypatch):
     assert "false positives on clean text:\n  none" in report
 
 
+def test_run_eval_empty_recall_prints_none(monkeypatch):
+    report = _recall_report(monkeypatch, EmptyChecker(), {})
+    assert "recall on injected errors:\n  none" in report
+
+
 def test_run_eval_verbose_empty_fp_prints_none(monkeypatch, capsys):
     monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
     monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)

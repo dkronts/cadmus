@@ -174,6 +174,8 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
         lines.append(f"  {rule:12} {fp_counts[rule]:3}  e.g. {fp_samples[rule][0][1]}")
     lines.append("")
     lines.append("recall on injected errors:")
+    if not rec_counts:
+        lines.append("  none")
     for target in sorted(rec_counts):
         hit, tot = rec_counts[target]
         pct = 100.0 * hit / tot if tot else 0.0
