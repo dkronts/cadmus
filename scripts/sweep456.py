@@ -2,6 +2,7 @@
 """Full 456-sentence clean sweep: every '# text =' line of the UD-GDT test set."""
 
 import argparse
+import sys
 
 from cadmus.eval import harness
 
@@ -21,8 +22,9 @@ def main(argv=None):
         help="Print each violation as it is found",
     )
     args = parser.parse_args(argv)
-    return harness.run_sweep(verbose=args.verbose, path=args.path)
+    print(harness.run_sweep(verbose=args.verbose, path=args.path))
+    return 0
 
 
 if __name__ == "__main__":
-    print(main())
+    sys.exit(main())

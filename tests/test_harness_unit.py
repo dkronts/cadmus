@@ -530,7 +530,7 @@ def test_sweep456_main_forwards_args(monkeypatch):
 
     monkeypatch.setattr(harness, "run_sweep", recorder)
     result = sweep456.main(["--verbose", "--path", "/tmp/x.conllu"])
-    assert result == "report"
+    assert result == 0
     assert recorded == {"verbose": True, "path": "/tmp/x.conllu"}
 
 
@@ -544,5 +544,5 @@ def test_sweep456_main_defaults(monkeypatch):
         return "report"
 
     monkeypatch.setattr(harness, "run_sweep", recorder)
-    sweep456.main([])
+    assert sweep456.main([]) == 0
     assert recorded == {"verbose": False, "path": None}
