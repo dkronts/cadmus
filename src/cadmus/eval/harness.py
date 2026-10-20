@@ -74,10 +74,10 @@ def load_sweep_sentences(path=None):
     return out
 
 
-def run_sweep(checker=None, verbose=False):
+def run_sweep(checker=None, verbose=False, path=None):
     """Full clean sweep: all ``# text =`` sentences through check_batch."""
     checker = checker or CadmusChecker()
-    sentences = load_sweep_sentences()
+    sentences = load_sweep_sentences(path=path)
 
     counts = defaultdict(int)
     samples = defaultdict(list)

@@ -65,3 +65,20 @@ def test_run_sweep_report_counts_and_dampener(monkeypatch):
     assert len(spelling) == 1 and " 2 " in spelling[0]
     assert len(typography) == 1 and " 1 " in typography[0]
     assert "dampener: 2 flags suppressed by lexicon, 5 fired" in report
+
+
+def test_run_sweep_forwards_path_to_load_sweep_sentences(monkeypatch):
+    recorded = []
+
+    def recorder(path=None):
+        recorded.append(path)
+        return list(TEXTS)
+
+    monkeypatch.setattr(harness, "load_sweep_sentences", recorder)
+
+    some_path = "other/ud-file.conllu"
+    run_sweep(checker=StubChecker(), path=some_path)
+    assert recorded == [some_path]
+
+    run_sweep(checker=StubChecker())
+    assert recorded == [some_path, None]
