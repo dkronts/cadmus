@@ -89,6 +89,52 @@ def test_det_noun_without_form_feats_resource_keeps_old_behavior():
     assert det_noun(s, by_id, {"lexicon": lex})
 
 
+def test_det_noun_dual_gender_article_suppresses():
+    # «του» is attested Gen Masc+Neut; the tagger's Masc guess must not
+    # veto the Neut reading against a Neut head
+    words = [
+        FW(1, "του", "DET", "Case=Gen|Gender=Masc|Number=Sing", head=2, deprel="det"),
+        FW(2, "σπίτι", "NOUN", "Case=Gen|Gender=Neut|Number=Sing", lemma="σπίτι"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"του": "Masc"},
+                      det_gender_sets={"του": {"Masc", "Neut"}})
+    assert det_noun(s, by_id, {"lexicon": lex}) == []
+
+
+def test_det_noun_single_gender_article_still_fires():
+    words = [
+        FW(1, "Η", "DET", "Case=Nom|Gender=Fem|Number=Sing", head=2, deprel="det"),
+        FW(2, "υπουργός", "NOUN", "Case=Nom|Gender=Masc|Number=Sing", lemma="υπουργός"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"η": "Fem"}, det_gender_sets={})
+    assert any("Gender" in f[2] for f in det_noun(s, by_id, {"lexicon": lex}))
+
+
+def test_det_noun_article_without_attested_set_keeps_feats_behavior():
+    # «τους» has no dual-gender attestation: the Gender mismatch still fires
+    words = [
+        FW(1, "τους", "DET", "Case=Acc|Gender=Masc|Number=Plur", head=2, deprel="det"),
+        FW(2, "πρόποδες", "NOUN", "Case=Acc|Gender=Fem|Number=Plur", lemma="πρόποδη"),
+    ]
+    s, by_id = sent(words)
+    lex = FakeLexicon(det_genders={"τους": "Masc"},
+                      det_gender_sets={"του": {"Masc", "Neut"}})
+    assert any("Gender" in f[2] for f in det_noun(s, by_id, {"lexicon": lex}))
+
+
+def test_det_gender_set_accessor_semantics():
+    class _W:
+        def __init__(self, text):
+            self.text = text
+
+    lex = FormLexicon({}, {}, {}, {"του": ["Masc", "Neut"]})
+    assert lex.det_gender_set(_W("Του")) == {"Masc", "Neut"}
+    assert lex.det_gender_set(_W("η")) is None
+    assert FormLexicon({}).det_gender_set(_W("του")) is None
+
+
 def test_adj_noun_case_mismatch_skipped():
     words = [
         FW(1, "πολύχρωμων", "ADJ", "Case=Gen|Gender=Fem|Number=Plur", head=2, deprel="amod"),

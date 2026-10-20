@@ -41,14 +41,18 @@ Newly surfaced gaps:
       `noun_genders`; the live firing paths are (a) nouns whose surface form
       is unseen in UD-train (never suspect → the rule falls back to tagger
       Gender via `resolve_gender`) and (b) suspect nouns whose lemma gender
-      IS resolved. The planned increment (form-level gender sets derived
-      from the persisted `entries`, `nominal_cases` precedent, firing only
-      on genuinely disjoint attested evidence) was BUILT AND MEASURED
-      2026-10-19 and **REJECTED** — see the Gender-gating RECON section;
-      `FormLexicon.form_gender` is kept dormant + tested. Constraint:
-      relaxing `build()`'s unique-gender + ≥2-attestation filter is inert —
-      `load()` short-circuits to the cached `lexicon.v2.json`, so coverage
-      must come from the persisted entries (or an asset-filename bump)
+       IS resolved. The planned increment (form-level gender sets derived
+       from the persisted `entries`, `nominal_cases` precedent, firing only
+       on genuinely disjoint attested evidence) was BUILT AND MEASURED
+       2026-10-19 and **REJECTED** — see the Gender-gating RECON section;
+       `FormLexicon.form_gender` is kept dormant + tested. Constraint:
+       relaxing `build()`'s unique-gender + ≥2-attestation filter is inert —
+       `load()` short-circuits to the cached lexicon, so coverage must come
+       from the persisted entries or an asset-filename bump; the bump path
+       shipped 2026-10-20 for the ARTICLE side (`det_gender_sets` in
+       `lexicon.v3.json`, det_noun 19→13 per 456 clean, recall held — see
+       the dual-gender article RECON section). The head-side residue
+       (13/456) stays the tagger-quality ceiling
 - [ ] det corruption misses when stanza re-parses structure (attach changes)
 - [ ] stanza emits no Mood=Sub for Greek: any future mood-dependent rule must
       use positional context (see rules/negation.py)
@@ -240,6 +244,29 @@ Measured on the 300 round-trip pilot pairs (8B + 35B) + the 456 clean sweep:
       confirmed tagger-quality ceiling. The `agreement.py` gate was
       reverted; `form_gender` is kept (dormant, unit-tested — the
       `nominal_cases` precedent) for any future consumer.
+
+## det_noun dual-gender article Gender gate RECON — SHIPPED (2026-10-20)
+
+- [x] The 2026-10-19 rejection killed the *head-side* form_gender gate but
+      left the *article-side* half untried: `build()`'s `len(c)==1` filter
+      dropped syncretic articles («του» = Gen Masc+Neut, «των», «οι», «το»,
+      «ενός», «ένα»), so their tagger feats guess vetoed the head's other
+      attested reading. Shipped: full attested gender set per article form
+      (`det_gender_sets`, forms with >=2 genders and total count >=2 — 6
+      forms in UD-train) serialized into a bumped `lexicon.v3.json` (the
+      stale-cache inertness constraint made the v2→v3 filename bump
+      mandatory), `FormLexicon.det_gender_set(word)`, and a `det_noun`
+      Gender-branch suppression when the set contains the head's resolved
+      gender. Case/Number and `_form_feats_gate` untouched.
+- [x] Measured (same session, CPU pipeline): 456 clean sweep det_noun FP
+      **19 → 13** (all 6 suppressions are Gender mismatches on dual-gender
+      articles — «του»×3, «ενός», «των», «Οι»; zero new flags; every other
+      rule identical), fixed-seed eval det recall **58% → 58%** (14/24),
+      pool FP identical (det_noun 3, spelling 1), all other recalls and the
+      targeted pool identical. Ship criteria met; gate kept. Residue 13/456
+      (10 Gender on single-gender articles + dual-usage nouns + 2 Case + 1
+      Number) stays the documented tagger-quality ceiling. 4 new model-free
+      unit tests + FakeLexicon `det_gender_sets` option
 
 ## v0.0.24 — Correction suggestions for rel_agreement, copula_pred; ranked spelling suggestions
 

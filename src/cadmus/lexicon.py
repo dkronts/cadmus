@@ -66,10 +66,11 @@ def _parse_feats(raw):
 class FormLexicon:
     """form -> set of (UPOS, agreement feats); noun lemma -> attested genders."""
 
-    def __init__(self, entries, noun_genders=None, det_genders=None):
+    def __init__(self, entries, noun_genders=None, det_genders=None, det_gender_sets=None):
         self.entries = entries
         self.noun_genders = noun_genders or {}
         self.det_genders = det_genders or {}
+        self.det_gender_sets = {f: set(g) for f, g in (det_gender_sets or {}).items()}
 
     @classmethod
     def build(cls, conllu_path):
@@ -101,25 +102,31 @@ class FormLexicon:
                    if len(c) == 1 and sum(c.values()) >= 2}
         dets = {form: dict(c) for form, c in det_genders.items()
                 if len(c) == 1 and sum(c.values()) >= 2}
+        gender_sets = {form: sorted(c) for form, c in det_genders.items()
+                       if len(c) >= 2 and sum(c.values()) >= 2}
         return cls(serialized,
                    {lemma: next(iter(c)) for lemma, c in genders.items()},
-                   {form: next(iter(c)) for form, c in dets.items()})
+                   {form: next(iter(c)) for form, c in dets.items()},
+                   gender_sets)
 
     @classmethod
     def load(cls):
-        lex_path = CACHE_DIR / "lexicon.v2.json"
+        lex_path = CACHE_DIR / "lexicon.v3.json"
         if not lex_path.exists():
             ensure_asset("el_gdt-ud-train.conllu")
             lex = cls.build(ensure_asset("el_gdt-ud-train.conllu"))
             lex_path.write_text(
                 json.dumps({"entries": lex.entries, "noun_genders": lex.noun_genders,
-                            "det_genders": lex.det_genders},
+                            "det_genders": lex.det_genders,
+                            "det_gender_sets": {f: sorted(g)
+                                                for f, g in lex.det_gender_sets.items()}},
                            ensure_ascii=False),
                 encoding="utf-8",
             )
             return lex
         data = json.loads(lex_path.read_text(encoding="utf-8"))
-        return cls(data["entries"], data["noun_genders"], data.get("det_genders"))
+        return cls(data["entries"], data["noun_genders"], data.get("det_genders"),
+                   data.get("det_gender_sets"))
 
     def noun_gender(self, lemma):
         """Attested gender for a lemma, or None when unattested."""
@@ -134,6 +141,14 @@ class FormLexicon:
 
     def resolve_det_gender(self, word):
         return self.det_genders.get(word.text.lower())
+
+    def det_gender_set(self, word):
+        """Full attested gender set of an article surface form, or None.
+
+        Syncretic articles («του» = Gen Masc+Neut) are excluded from
+        `det_genders` (unambiguous forms only); this keeps their complete
+        reading set for mismatch suppression."""
+        return self.det_gender_sets.get(word.text.lower())
 
     def is_suspect(self, word):
         analyses = self.entries.get(word.text.lower())

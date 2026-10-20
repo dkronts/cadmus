@@ -23,10 +23,11 @@ class FS:
 
 class FakeLexicon:
     def __init__(self, det_genders=None, noun_genders=None, suspect_ids=(),
-                 form_feats=None, nominal_cases=None):
+                 form_feats=None, nominal_cases=None, det_gender_sets=None):
         self.det_genders = det_genders or {}
         self.noun_genders = noun_genders or {}
         self.suspect_ids = set(suspect_ids)
+        self.det_gender_sets = {f: set(g) for f, g in (det_gender_sets or {}).items()}
         if form_feats is not None:
             # capability flag: the rule detects form_feats by getattr, so the
             # method exists only when the test configures attestation data
@@ -39,6 +40,9 @@ class FakeLexicon:
 
     def resolve_det_gender(self, word):
         return self.det_genders.get(word.text.lower())
+
+    def det_gender_set(self, word):
+        return self.det_gender_sets.get(word.text.lower())
 
     def resolve_gender(self, word):
         g = self.noun_gender(word.lemma)

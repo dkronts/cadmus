@@ -58,9 +58,10 @@ recall, construction-targeted recall); do not treat the overlap as a bug.
 
 ## Surfaced gaps (open — mirrored in TODOs.md)
 
-- det_noun residue 19/456 is a measured tagger-quality ceiling (both
-  Gender-gating variants measured: unconditional costs pool recall
-  58→38%, suspect-gated disjoint-evidence is inert 19→19)
+- det_noun residue 13/456 (was 19) after the v0.0.26 dual-gender article
+  Gender gate; the rest is a measured tagger-quality ceiling (unconditional
+  Gender gating costs pool recall 58→38%, suspect-gated disjoint-evidence
+  is inert 19→19)
 - spelling residue 22/456 is correct detection of imperfect source text
   (documented REJECTED v0.0.15)
 - prep_case/verb_valence/rel_agreement residues (1/1/2) documented as
@@ -70,7 +71,8 @@ recall, construction-targeted recall); do not treat the overlap as a bug.
   article omission become candidates again only with an STT corpus
 
 - rare nouns absent from UD train still FP-prone via the tagger (det_noun
-  residue 19/456: unseen-form Gender noise + dual-usage nouns like
+  residue 13/456 after the v0.0.26 dual-gender article gate: unseen-form
+  Gender noise + dual-usage nouns like
   «Υπουργός» — form-level Gender gating measured and REJECTED twice:
   unconditional gate costs pool recall 58→38% (v0.0.17); suspect-head
   disjoint-evidence gate measured inert (19→19 FP, recall 58% held — all
@@ -81,8 +83,9 @@ recall, construction-targeted recall); do not treat the overlap as a bug.
   `nominal_cases` resource is now active as the unseen-head guard
 - gender-coverage extensions must derive from the persisted `entries` at
   resolve time (`nominal_cases`/`form_feats` precedents shipped);
-  `build()`-filter changes are inert against the cached `lexicon.v2.json`
-  because `load()` short-circuits to it
+  `build()`-filter changes are inert against a stale cache because `load()`
+  short-circuits to it — v0.0.26 shipped the filename-bump path
+  (`lexicon.v3.json` + `det_gender_sets`)
 - `PropnLexicon.forms` holds ~5.5k unaccented title variants (`απο`, `βορεια`)
   — unsafe as a known-word set for unaccented tokens (accent recall 87→60%
   when trusted; v0.0.15 restricts PROPN coverage to accented tokens)
@@ -93,6 +96,34 @@ recall, construction-targeted recall); do not treat the overlap as a bug.
 - `na_form` / `verb_valence` recall bounded by treebank coverage
 - relcl corruption-pool samples: construction-targeted pool shipped (v0.0.25,
   23 sentences → 17 rel + 6 num corruptions); recall numbers pending a model run
+
+## det_noun dual-gender article Gender gate RECON — SHIPPED (2026-10-20)
+
+`FormLexicon.build()` kept only unambiguous article forms in `det_genders`
+(`len(c)==1`), so syncretic articles («του» = Gen Masc+Neut) resolved via the
+tagger's feats guess and produced Gender FPs against heads whose gender is one
+of the article's *other* attested readings. Shipped: `build()` now also
+serializes `det_gender_sets` (form -> genders, forms with >=2 genders and
+total count >=2 — 6 forms in UD-train: ένα, ενός, οι, το, του, των) into a
+bumped `lexicon.v3.json` (the documented stale-cache inertness constraint
+made the filename bump mandatory), `FormLexicon.det_gender_set(word)` exposes
+it, and `det_noun` suppresses a Gender mismatch when the article form's
+attested set contains the head's resolved gender. Case/Number stay on
+`_form_feats_gate`, untouched.
+
+Measured (this machine, CPU pipeline, same session before/after):
+- 456-sentence clean sweep: det_noun FP **19 → 13** (−6, all Gender; the 2
+  Case + 1 Number residues unchanged; every other rule's count identical).
+  Suppressed flags: «του»[Neut] vs υπολογιστή[Masc], «του»[Masc] vs
+  Aθανασίου[Neut], «του»[Masc] vs Μαλάουι[Neut], «ενός»[Neut] vs φρουρού[Masc],
+  «των»[Fem] vs γαλλικών[Masc], «Οι»[Fem] vs αντιπροσώποι[Masc]. Zero new
+  flags.
+- eval (n=100, seed 42): det recall **58% → 58%** (14/24), pool FP identical
+  (det_noun 3, spelling 1), all other recalls identical (accent 87%, nonword
+  96%, script-mix 95%, propn_accent 78%, negation/typography 100%), targeted
+  pool identical (rel 3/17, num 3/6).
+- Ship criteria met (FP drop, no recall regression) — gate kept. 4 new
+  model-free unit tests + FakeLexicon `det_gender_sets` option.
 
 ## Run log
 
@@ -114,3 +145,4 @@ perf if re-measured.
 | v0.0.24 | 2026-10 | suggestions: rel_agreement «ο οποίος», copula_pred «γιατρός», ranked spelling primaries | 136 | identical | identical (messages unchanged; only suggestion fields gained) | — |
 | — (rejected) | 2026-10 | det_noun: suspect-head disjoint-evidence Gender gate (`form_gender`) — **REJECTED**, gate reverted, resource kept | 139 | identical (det 58%, 14/24) | det_noun 19→19 per 456 clean (gate inert: 0 suppressions; all 18 Gender mismatches non-suspect) | — |
 | v0.0.25 (unreleased) | 2026-10 | eval: construction-targeted recall pool (`load_targeted_sentences` + targeted pass in `run_eval`) | 177 | pending model run (pool: rel 17, num 6 corruptions) | unchanged (FP scan + random recall pool identical) | — |
+| v0.0.26 (unreleased) | 2026-10 | det_noun: dual-gender article Gender gate (`det_gender_sets` in `lexicon.v3.json`) | 186 | identical (det 58%, 14/24) | det_noun 19→13 per 456 clean (6 Gender FPs on «του/ενός/των/Οι»; pool FP identical) | — |

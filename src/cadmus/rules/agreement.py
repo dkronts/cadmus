@@ -60,6 +60,19 @@ def _form_feats_gate(lex, h, k, det_val):
     return det_val in attested
 
 
+def _det_gender_set_gate(lex, w, noun_val):
+    """True when the article form is attested with the head's gender.
+
+    Syncretic articles («του» = Gen Masc+Neut) keep their full attested
+    gender set in the lexicon; the tagger's single feats guess must not
+    veto another attested reading of the same form."""
+    gs = getattr(lex, "det_gender_set", None)
+    if gs is None:
+        return False
+    attested = gs(w)
+    return bool(attested) and noun_val in attested
+
+
 def det_noun(sent, by_id, env):
     out = []
     lex = env.get("lexicon")
@@ -81,6 +94,8 @@ def det_noun(sent, by_id, env):
             noun_val = noun_gender if k == "Gender" else hf.get(k)
             det_val = det_gender if k == "Gender" else f.get(k)
             if det_val is not None and noun_val is not None and det_val != noun_val:
+                if lex is not None and k == "Gender" and _det_gender_set_gate(lex, w, noun_val):
+                    continue
                 if lex is not None and _form_feats_gate(lex, h, k, det_val):
                     continue
                 msg = f"DET-NOUN {k}: '{w.text}'[{det_val}] vs '{h.text}'[{noun_val}]"
