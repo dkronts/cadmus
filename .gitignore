@@ -10,3 +10,4 @@ dist/
 htmlcov/
 stanza_resources/
 .cache/
+serve.log
