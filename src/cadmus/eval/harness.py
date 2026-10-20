@@ -74,11 +74,11 @@ def load_sweep_sentences(path=None):
     return out
 
 
-def sweep_tally(sentences, checker, verbose=False):
-    """Per-violation tally over sentences: (counts, samples) per rule."""
+def sweep_tally(pairs, verbose=False):
+    """Per-violation tally over (sentence, violations) pairs: (counts, samples) per rule."""
     counts = defaultdict(int)
     samples = defaultdict(list)
-    for s, violations in zip(sentences, checker.check_batch(sentences)):
+    for s, violations in pairs:
         for v in violations:
             counts[v.rule] += 1
             if len(samples[v.rule]) < 3:
@@ -93,7 +93,7 @@ def run_sweep(checker=None, verbose=False, path=None):
     checker = checker or CadmusChecker()
     sentences = load_sweep_sentences(path=path)
 
-    counts, samples = sweep_tally(sentences, checker, verbose=verbose)
+    counts, samples = sweep_tally(zip(sentences, checker.check_batch(sentences)), verbose=verbose)
 
     lines = []
     lines.append(f"sweep: {len(sentences)} sentences, full clean sweep (all # text lines)")
@@ -114,13 +114,7 @@ def run_eval(n=100, seed=42, verbose=False):
     sentences = load_clean_sentences(n)
     rng = random.Random(seed)
 
-    fp_counts = defaultdict(int)
-    fp_samples = defaultdict(list)
-    for s in sentences:
-        for v in checker.check(s):
-            fp_counts[v.rule] += 1
-            if len(fp_samples[v.rule]) < 3:
-                fp_samples[v.rule].append((s[:60], v.message[:80]))
+    fp_counts, fp_samples = sweep_tally(((s, checker.check(s)) for s in sentences))
 
     rec_counts = defaultdict(lambda: [0, 0])
     for s in sentences:

@@ -107,7 +107,8 @@ def test_run_sweep_forwards_path_to_load_sweep_sentences(monkeypatch):
 
 
 def test_run_sweep_caps_samples_at_three():
-    counts, samples = harness.sweep_tally(list(TEXTS), ManySpellingChecker())
+    checker = ManySpellingChecker()
+    counts, samples = harness.sweep_tally(zip(TEXTS, checker.check_batch(TEXTS)))
     assert counts["spelling"] == 5
     assert [msg for _, msg in samples["spelling"]] == ["m0", "m1", "m2"]
 
