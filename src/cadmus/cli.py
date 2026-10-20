@@ -8,6 +8,13 @@ from .corpora import BROKEN_SENTENCES, DEMO_SENTENCES
 from .data import filter_violations
 
 
+def _positive_int(value):
+    n = int(value)
+    if n < 1:
+        raise argparse.ArgumentTypeError("--batch-size must be >= 1")
+    return n
+
+
 def _render(violations):
     if not violations:
         print("OK: no violations found.")
@@ -73,7 +80,7 @@ def main(argv=None):
                          help="only report violations at or above this severity")
     p_batch.add_argument("--rules", metavar="R1,R2",
                          help="comma-separated rule ids to report")
-    p_batch.add_argument("--batch-size", type=int, default=32, dest="batch_size",
+    p_batch.add_argument("--batch-size", type=_positive_int, default=32, dest="batch_size",
                          help="texts per pipeline batch (default 32)")
 
     p_diag = sub.add_parser("diagnose", help="report analyzer feature coverage (why rules stay silent)")
