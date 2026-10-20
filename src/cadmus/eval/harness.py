@@ -114,16 +114,23 @@ def run_eval(n=100, seed=42, verbose=False, checker=None):
     sentences = load_clean_sentences(n)
     rng = random.Random(seed)
 
-    fp_counts, fp_samples = sweep_tally(zip(sentences, checker.check_batch(sentences)))
+    fp_counts, fp_samples = sweep_tally(
+        zip(sentences, checker.check_batch(sentences)), verbose=verbose
+    )
 
     rec_counts = defaultdict(lambda: [0, 0])
+    pairs = []
     for s in sentences:
         result = corrupt(s, rng)
         if not result:
             continue
         corrupted, target = result
         rec_counts[target][1] += 1
-        fired = {v.rule for v in checker.check(corrupted)}
+        pairs.append((corrupted, target))
+
+    results = checker.check_batch([c for c, _ in pairs]) if pairs else []
+    for (corrupted, target), violations in zip(pairs, results):
+        fired = {v.rule for v in violations}
         if fired & TARGET_RULES.get(target, {target}):
             rec_counts[target][0] += 1
         elif verbose:

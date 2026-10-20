@@ -146,6 +146,57 @@ def test_run_eval_fp_tally_uses_check_batch(monkeypatch):
     assert "dampener: 2 flags suppressed by lexicon, 5 fired" in report
 
 
+class RecallStubChecker:
+    def __init__(self, fire_for=()):
+        self._damp_stats = {"suppressed": 0, "fired": 0}
+        self.batches = []
+        self.fire_for = set(fire_for)
+
+    def check_batch(self, texts, batch_size=32):
+        texts = list(texts)
+        self.batches.append(texts)
+        return [
+            [Violation(t, "spelling", "unknown form", 0, 4)] if t in self.fire_for else []
+            for t in texts
+        ]
+
+
+def _recall_report(monkeypatch, checker, corrupt_map, verbose=False):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: corrupt_map.get(s))
+    return run_eval(checker=checker, verbose=verbose)
+
+
+def test_run_eval_recall_batches_corrupted_and_tallies_hit_and_miss(monkeypatch):
+    hit = TEXTS[0] + " ληθ"
+    miss = TEXTS[1] + " ληθ"
+    checker = RecallStubChecker(fire_for={hit})
+    report = _recall_report(
+        monkeypatch,
+        checker,
+        {TEXTS[0]: (hit, "nonword"), TEXTS[1]: (miss, "nonword")},
+    )
+    assert checker.batches == [TEXTS, [hit, miss]]
+    recall_lines = [ln for ln in report.splitlines() if "nonword" in ln]
+    assert recall_lines == ["  nonword      1/2  (50%)"]
+
+
+def test_run_eval_verbose_prints_miss_line(monkeypatch, capsys):
+    corrupted = TEXTS[0] + " αβγ"
+    checker = RecallStubChecker()
+    report = _recall_report(
+        monkeypatch, checker, {TEXTS[0]: (corrupted, "nonword")}, verbose=True
+    )
+    out = capsys.readouterr().out
+    assert f"  MISS [nonword]: {corrupted[:70]} -> []" in out
+    assert "  nonword      0/1  (0%)" in report
+
+
+def test_run_eval_empty_fp_prints_none(monkeypatch):
+    report = _recall_report(monkeypatch, EmptyChecker(), {})
+    assert "false positives on clean text:\n  none" in report
+
+
 def _load_sweep456():
     script_path = Path(__file__).resolve().parent.parent / "scripts" / "sweep456.py"
     spec = importlib.util.spec_from_file_location("sweep456", script_path)
