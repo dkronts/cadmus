@@ -123,3 +123,23 @@ def test_check_batch_rejects_negative_batch_size():
     with pytest.raises(ValueError, match="batch_size must be >= 1") as excinfo:
         checker.check_batch(["Ένα.", "Δύο."], batch_size=-3)
     assert "must not be zero" not in str(excinfo.value)
+
+
+def test_check_batch_rejects_float_batch_size():
+    checker, _ = _checker()
+    with pytest.raises(TypeError, match="cannot be interpreted"):
+        checker.check_batch(["Ένα.", "Δύο."], batch_size=2.5)
+
+
+def test_check_batch_rejects_string_batch_size():
+    checker, _ = _checker()
+    with pytest.raises(TypeError, match="cannot be interpreted"):
+        checker.check_batch(["Ένα.", "Δύο."], batch_size="4")
+
+
+def test_check_batch_accepts_bool_true_as_one():
+    checker, nlp = _checker()
+    out = checker.check_batch(["Ένα.", "Δύο.", "Τρία."], batch_size=True)
+    assert len(out) == 3
+    assert nlp.pipe_calls == 3
+    assert nlp.call_count == 0

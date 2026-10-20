@@ -1,5 +1,6 @@
 """Core checker: text in, violations out."""
 
+import operator
 from dataclasses import dataclass, field
 
 from .data import RULE_SEVERITY
@@ -118,6 +119,7 @@ class CadmusChecker:
         (stanza <=1.15) batch APIs, falling back to per-text calls.
         """
         texts = list(texts)
+        batch_size = operator.index(batch_size)
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         results = []
