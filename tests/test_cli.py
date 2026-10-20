@@ -349,7 +349,7 @@ def test_non_utf8_input_reports_clean_error(tmp_path, capsys, cmd):
     rc = cli.main([cmd, str(path)])
     captured = capsys.readouterr()
     assert rc == 2
-    assert "cadmus: error:" in captured.err
+    assert "cadmus: error: invalid utf-8:" in captured.err
     assert "Traceback" not in captured.err
 
 

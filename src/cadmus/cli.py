@@ -19,6 +19,8 @@ def _positive_int(value):
 
 
 def _read_error_line(path, exc):
+    if isinstance(exc, UnicodeDecodeError):
+        return f"invalid utf-8: {path}"
     code = getattr(exc, "errno", None)
     if code == errno.ENOENT:
         return f"no such file: {path}"
@@ -147,8 +149,6 @@ def main(argv=None):
                 reason = (getattr(exc, "strerror", None) or getattr(exc, "reason", None)
                           or (exc.args[0] if exc.args else None) or "unknown error")
                 line = f"could not read the UD-GDT asset: {reason}"
-            elif isinstance(exc, UnicodeDecodeError):
-                line = f"invalid utf-8: {path}"
             else:
                 line = _read_error_line(path, exc)
             print(f"cadmus: error: {line}", file=sys.stderr)
