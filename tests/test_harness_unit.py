@@ -1,5 +1,8 @@
 """Model-free, asset-free tests for the 456-sweep loader and report."""
 
+import importlib.util
+from pathlib import Path
+
 from cadmus.checker import Violation
 from cadmus.eval import harness
 from cadmus.eval.harness import load_sweep_sentences, run_sweep
@@ -82,3 +85,40 @@ def test_run_sweep_forwards_path_to_load_sweep_sentences(monkeypatch):
 
     run_sweep(checker=StubChecker())
     assert recorded == [some_path, None]
+
+
+def _load_sweep456():
+    script_path = Path(__file__).resolve().parent.parent / "scripts" / "sweep456.py"
+    spec = importlib.util.spec_from_file_location("sweep456", script_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_sweep456_main_forwards_args(monkeypatch):
+    sweep456 = _load_sweep456()
+    recorded = {}
+
+    def recorder(verbose=False, path=None):
+        recorded["verbose"] = verbose
+        recorded["path"] = path
+        return "report"
+
+    monkeypatch.setattr(harness, "run_sweep", recorder)
+    result = sweep456.main(["--verbose", "--path", "/tmp/x.conllu"])
+    assert result == "report"
+    assert recorded == {"verbose": True, "path": "/tmp/x.conllu"}
+
+
+def test_sweep456_main_defaults(monkeypatch):
+    sweep456 = _load_sweep456()
+    recorded = {}
+
+    def recorder(verbose=False, path=None):
+        recorded["verbose"] = verbose
+        recorded["path"] = path
+        return "report"
+
+    monkeypatch.setattr(harness, "run_sweep", recorder)
+    sweep456.main([])
+    assert recorded == {"verbose": False, "path": None}

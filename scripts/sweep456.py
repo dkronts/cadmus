@@ -7,9 +7,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from cadmus.eval.harness import run_sweep
+from cadmus.eval import harness
 
-if __name__ == "__main__":
+
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Full 456-sentence clean sweep over a UD conllu file."
     )
@@ -23,5 +24,9 @@ if __name__ == "__main__":
         action="store_true",
         help="Print each violation as it is found",
     )
-    args = parser.parse_args()
-    print(run_sweep(verbose=args.verbose, path=args.path))
+    args = parser.parse_args(argv)
+    return harness.run_sweep(verbose=args.verbose, path=args.path)
+
+
+if __name__ == "__main__":
+    print(main())
