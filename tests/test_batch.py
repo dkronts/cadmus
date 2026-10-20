@@ -12,6 +12,15 @@ class ShortPipeNLP(FakeNLP):
         return [FakeDoc(t) for t in texts][:-1]
 
 
+class ShortLastChunkNLP(FakeNLP):
+    """pipe() drops the last doc only for single-text chunks (the final chunk)."""
+
+    def pipe(self, texts):
+        self.pipe_calls += 1
+        docs = [FakeDoc(t) for t in texts]
+        return docs[:-1] if len(texts) == 1 else docs
+
+
 def _checker():
     nlp = FakeNLP()
     return CadmusChecker(nlp=nlp, use_lexicon=False), nlp
@@ -56,5 +65,17 @@ def test_check_batch_falls_back_to_process_many():
 
 def test_check_batch_raises_when_pipeline_returns_too_few_docs():
     checker = CadmusChecker(nlp=ShortPipeNLP(), use_lexicon=False)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="chunk 0"):
         checker.check_batch(["Ένα.", "Δύο.", "Τρία."])
+
+
+def test_check_batch_error_names_the_truncating_chunk():
+    checker = CadmusChecker(nlp=ShortPipeNLP(), use_lexicon=False)
+    with pytest.raises(ValueError, match="chunk 0"):
+        checker.check_batch(["α.", "β.", "γ.", "δ.", "ε."], batch_size=2)
+
+
+def test_check_batch_error_names_a_later_truncating_chunk():
+    checker = CadmusChecker(nlp=ShortLastChunkNLP(), use_lexicon=False)
+    with pytest.raises(ValueError, match=r"chunk 2 \(texts 4\.\.4\) of 5 texts"):
+        checker.check_batch(["α.", "β.", "γ.", "δ.", "ε."], batch_size=2)

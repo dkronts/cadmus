@@ -119,15 +119,23 @@ class CadmusChecker:
         """
         texts = list(texts)
         results = []
-        for i in range(0, len(texts), batch_size):
+        for chunk_idx, i in enumerate(range(0, len(texts), batch_size)):
             chunk = texts[i:i + batch_size]
             normalized = [normalize_for_analysis(t) for t in chunk]
             docs = self._iter_docs([shadow for shadow, _ in normalized])
+            consumed = 0
             for orig, (_, mapper), doc in zip(chunk, normalized, docs):
                 results.append(self._analyze(orig, doc, mapper))
+                consumed += 1
+            if consumed < len(chunk):
+                raise ValueError(
+                    f"pipeline returned {consumed} results for chunk {chunk_idx} "
+                    f"(texts {i}..{i + len(chunk) - 1}) of {len(texts)} texts"
+                )
         if len(results) != len(texts):
             raise ValueError(
-                f"pipeline returned {len(results)} results for {len(texts)} texts"
+                f"pipeline returned {len(results)} results for {len(texts)} texts "
+                f"(chunk {len(results) // batch_size})"
             )
         return results
 
