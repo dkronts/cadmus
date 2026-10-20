@@ -74,11 +74,8 @@ def load_sweep_sentences(path=None):
     return out
 
 
-def run_sweep(checker=None, verbose=False, path=None):
-    """Full clean sweep: all ``# text =`` sentences through check_batch."""
-    checker = checker or CadmusChecker()
-    sentences = load_sweep_sentences(path=path)
-
+def sweep_tally(sentences, checker, verbose=False):
+    """Per-violation tally over sentences: (counts, samples) per rule."""
     counts = defaultdict(int)
     samples = defaultdict(list)
     for s, violations in zip(sentences, checker.check_batch(sentences)):
@@ -88,6 +85,15 @@ def run_sweep(checker=None, verbose=False, path=None):
                 samples[v.rule].append((s[:60], v.message[:80]))
             if verbose:
                 print(f"  [{v.rule}] {s[:70]} -> {v.message[:80]}")
+    return counts, samples
+
+
+def run_sweep(checker=None, verbose=False, path=None):
+    """Full clean sweep: all ``# text =`` sentences through check_batch."""
+    checker = checker or CadmusChecker()
+    sentences = load_sweep_sentences(path=path)
+
+    counts, samples = sweep_tally(sentences, checker, verbose=verbose)
 
     lines = []
     lines.append(f"sweep: {len(sentences)} sentences, full clean sweep (all # text lines)")

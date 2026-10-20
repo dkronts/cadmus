@@ -1,6 +1,5 @@
 """Model-free, asset-free tests for the 456-sweep loader and report."""
 
-import collections
 import importlib.util
 from pathlib import Path
 
@@ -107,27 +106,9 @@ def test_run_sweep_forwards_path_to_load_sweep_sentences(monkeypatch):
     assert recorded == [some_path, None]
 
 
-def test_run_sweep_caps_samples_at_three(monkeypatch):
-    monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
-
-    created = []
-    real_defaultdict = collections.defaultdict
-
-    def tracking_defaultdict(*args, **kwargs):
-        d = real_defaultdict(*args, **kwargs)
-        created.append(d)
-        return d
-
-    monkeypatch.setattr(harness, "defaultdict", tracking_defaultdict)
-
-    report = run_sweep(checker=ManySpellingChecker())
-
-    spelling_lines = [ln for ln in report.splitlines() if "spelling" in ln]
-    assert len(spelling_lines) == 1
-    assert " 5 " in spelling_lines[0]
-    assert "e.g. m0" in spelling_lines[0]
-
-    samples = next(d for d in created if d.default_factory is list)
+def test_run_sweep_caps_samples_at_three():
+    counts, samples = harness.sweep_tally(list(TEXTS), ManySpellingChecker())
+    assert counts["spelling"] == 5
     assert [msg for _, msg in samples["spelling"]] == ["m0", "m1", "m2"]
 
 
