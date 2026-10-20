@@ -5,7 +5,7 @@ from pathlib import Path
 
 from cadmus.checker import Violation
 from cadmus.eval import harness
-from cadmus.eval.harness import load_sweep_sentences, run_sweep
+from cadmus.eval.harness import load_sweep_sentences, run_eval, run_sweep
 
 TEXTS = [
     "Τρεις λέξεις εδώ",
@@ -129,6 +129,21 @@ def test_run_sweep_empty_counts_prints_none(monkeypatch):
     monkeypatch.setattr(harness, "load_sweep_sentences", lambda path=None: list(TEXTS))
     report = run_sweep(checker=EmptyChecker())
     assert "violations on clean text:\n  none" in report
+
+
+def test_run_eval_fp_tally_uses_check_batch(monkeypatch):
+    monkeypatch.setattr(harness, "load_clean_sentences", lambda n: list(TEXTS))
+    monkeypatch.setattr(harness, "corrupt", lambda s, rng: None)
+    stub = StubChecker()
+    report = run_eval(checker=stub)
+
+    assert stub.batches == [TEXTS]
+    assert "4 clean sentences" in report
+    spelling = [ln for ln in report.splitlines() if "spelling" in ln]
+    typography = [ln for ln in report.splitlines() if "typography" in ln]
+    assert len(spelling) == 1 and " 2 " in spelling[0]
+    assert len(typography) == 1 and " 1 " in typography[0]
+    assert "dampener: 2 flags suppressed by lexicon, 5 fired" in report
 
 
 def _load_sweep456():

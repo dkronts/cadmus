@@ -109,12 +109,12 @@ def run_sweep(checker=None, verbose=False, path=None):
     return "\n".join(lines)
 
 
-def run_eval(n=100, seed=42, verbose=False):
-    checker = CadmusChecker()
+def run_eval(n=100, seed=42, verbose=False, checker=None):
+    checker = checker or CadmusChecker()
     sentences = load_clean_sentences(n)
     rng = random.Random(seed)
 
-    fp_counts, fp_samples = sweep_tally(((s, checker.check(s)) for s in sentences))
+    fp_counts, fp_samples = sweep_tally(zip(sentences, checker.check_batch(sentences)))
 
     rec_counts = defaultdict(lambda: [0, 0])
     for s in sentences:
